@@ -258,5 +258,24 @@ app.put('/api/settings', async (req, res) => {
   }
 });
 
+// Эндпоинт для пинга
+app.get('/ping', (req, res) => {
+  res.json({ status: 'alive', time: new Date().toISOString() });
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || 'https://xrist.onrender.com';
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  
+  // Self-ping каждые 90 секунд чтобы Render не засыпал
+  setInterval(async () => {
+    try {
+      await fetch(`${SELF_URL}/ping`);
+      console.log('Self-ping OK:', new Date().toISOString());
+    } catch (e) {
+      console.log('Self-ping failed:', e.message);
+    }
+  }, 90000); // 90 секунд = 1.5 минуты
+});

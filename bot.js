@@ -4,7 +4,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const BOT_TOKEN = '8058915581:AAGrht72oQLPBnmhW-iltQrGZEQNNA4F22M';
 
 // URL твоего Mini App (нужен HTTPS!)
-const WEBAPP_URL = 'http://localhost:3000/';
+const WEBAPP_URL = 'https://xrist.onrender.com';
 
 const bot = new TelegramBot(BOT_TOKEN, { 
   polling: {

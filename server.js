@@ -8,9 +8,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-const GITHUB_TOKEN = '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';
-const REPO_OWNER = 'mraiko23';
-const REPO_NAME = 'xristianindb';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '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';
+const REPO_OWNER = process.env.REPO_OWNER || 'mraiko23';
+const REPO_NAME = process.env.REPO_NAME || 'xristianindb';
 const FILE_PATH = 'db.json';
 
 // Получить данные из GitHub

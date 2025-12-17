@@ -6,48 +6,52 @@
   <title>Электронный дневник</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body>
   <div id="app">
-    <!-- Экран загрузки -->
+    <!-- Загрузка -->
     <div id="loading-screen" class="screen active">
       <div class="loader"></div>
-      <p>Загрузка...</p>
+      <p style="margin-top: 20px; font-size: 16px;">Загрузка...</p>
     </div>
 
-    <!-- Экран ошибки (не из Telegram) -->
+    <!-- Ошибка -->
     <div id="error-screen" class="screen">
       <div class="error-icon">🚫</div>
       <h2>Доступ запрещён</h2>
-      <p>Это приложение доступно только через Telegram</p>
+      <p>Откройте приложение через Telegram</p>
     </div>
 
-    <!-- Экран регистрации -->
+    <!-- Регистрация -->
     <div id="register-screen" class="screen">
-      <h2>Добро пожаловать!</h2>
-      <p>Заполните данные для регистрации</p>
-      <form id="register-form">
-        <input type="text" id="reg-firstname" placeholder="Имя" required>
-        <input type="text" id="reg-lastname" placeholder="Фамилия" required>
-        <label>Дата рождения:</label>
-        <div class="date-inputs">
-          <input type="number" id="reg-day" placeholder="День" min="1" max="31" required>
-          <input type="number" id="reg-month" placeholder="Месяц" min="1" max="12" required>
-          <input type="number" id="reg-year" placeholder="Год" min="1990" max="2020" required>
-        </div>
-        <button type="submit" class="btn-primary">Зарегистрироваться</button>
-      </form>
+      <div class="form-card">
+        <h2>✨ Добро пожаловать!</h2>
+        <p>Заполните данные для регистрации</p>
+        <form id="register-form">
+          <input type="text" id="reg-firstname" placeholder="Имя" required>
+          <input type="text" id="reg-lastname" placeholder="Фамилия" required>
+          <label>Дата рождения</label>
+          <div class="date-row">
+            <input type="number" id="reg-day" placeholder="День" min="1" max="31" required>
+            <input type="number" id="reg-month" placeholder="Месяц" min="1" max="12" required>
+            <input type="number" id="reg-year" placeholder="Год" min="1990" max="2020" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Начать</button>
+        </form>
+      </div>
     </div>
 
     <!-- Главный экран -->
     <div id="main-screen" class="screen">
       <div id="page-content"></div>
       
-      <!-- Навигация -->
       <nav class="bottom-nav">
         <button class="nav-btn active" data-page="progress">🎁</button>
         <button class="nav-btn" data-page="topics">📚</button>
-        <button class="nav-btn" data-page="diary">📓</button>
+        <button class="nav-btn" data-page="diary">👤</button>
         <button class="nav-btn" data-page="settings">⚙️</button>
       </nav>
     </div>

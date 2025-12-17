@@ -11,62 +11,47 @@ let tgUser = null;
 
 // API
 const api = {
-  async get(url) {
-    const res = await fetch(url);
-    return res.json();
-  },
+  async get(url) { return (await fetch(url)).json(); },
   async post(url, data) {
-    const res = await fetch(url, {
+    return (await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    });
-    return res.json();
+    })).json();
   },
   async put(url, data) {
-    const res = await fetch(url, {
+    return (await fetch(url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    });
-    return res.json();
+    })).json();
   },
-  async delete(url) {
-    const res = await fetch(url, { method: 'DELETE' });
-    return res.json();
-  }
+  async delete(url) { return (await fetch(url, { method: 'DELETE' })).json(); }
 };
 
 // Инициализация
 async function init() {
-  // Получаем данные Telegram
-  tgUser = tg?.initDataUnsafe?.user;
-  
-  // Если нет Telegram - тестовый режим
-  if (!tgUser?.id) {
-    tgUser = {
-      id: 'test_123456',
-      username: 'test_user',
-      first_name: 'Тест',
-      last_name: 'Юзер',
-      photo_url: ''
-    };
+  // СТРОГАЯ проверка Telegram
+  if (!tg?.initDataUnsafe?.user?.id) {
+    showScreen('error-screen');
+    return;
   }
 
-  if (tg) {
-    tg.ready();
-    tg.expand();
-  }
+  tgUser = tg.initDataUnsafe.user;
+  tg.ready();
+  tg.expand();
+  
+  // Устанавливаем цвет хедера
+  tg.setHeaderColor('#667eea');
+  tg.setBackgroundColor('#667eea');
   
   try {
-    // Загрузка данных
     [settings, topics, homework] = await Promise.all([
       api.get('/api/settings').catch(() => ({ adminUsername: '@admin', giftThreshold: 5 })),
       api.get('/api/topics').catch(() => []),
       api.get('/api/homework').catch(() => [])
     ]);
 
-    // Проверка пользователя - всегда по текущему tgUser.id
     const userData = await api.get(`/api/user/${tgUser.id}`);
     
     if (!userData || userData.error || !userData.tgId) {
@@ -75,13 +60,13 @@ async function init() {
     } else {
       currentUser = userData;
       if (currentUser.isBlocked) {
-        showScreen('error-screen');
         document.querySelector('#error-screen p').textContent = 'Ваш аккаунт заблокирован';
+        showScreen('error-screen');
         return;
       }
       if (currentUser.theme === 'dark') document.body.classList.add('dark');
       showScreen('main-screen');
-      setupNavigation();
+      setupNav();
       renderPage('progress');
     }
   } catch (e) {
@@ -107,33 +92,31 @@ function showToast(msg) {
 // Регистрация
 function setupRegistration() {
   const form = document.getElementById('register-form');
-  if (tgUser.first_name) document.getElementById('reg-firstname').value = tgUser.first_name;
-  if (tgUser.last_name) document.getElementById('reg-lastname').value = tgUser.last_name || '';
+  if (tgUser?.first_name) document.getElementById('reg-firstname').value = tgUser.first_name;
+  if (tgUser?.last_name) document.getElementById('reg-lastname').value = tgUser.last_name || '';
   
   form.onsubmit = async (e) => {
     e.preventDefault();
-    const day = document.getElementById('reg-day').value;
-    const month = document.getElementById('reg-month').value;
-    const year = document.getElementById('reg-year').value;
+    const d = document.getElementById('reg-day').value;
+    const m = document.getElementById('reg-month').value;
+    const y = document.getElementById('reg-year').value;
+    if (!d || !m || !y) { showToast('Заполните дату рождения'); return; }
     
-    if (!day || !month || !year) { showToast('Заполните дату рождения'); return; }
-    
-    const data = {
+    const result = await api.post('/api/register', {
       tgId: String(tgUser.id),
       username: tgUser.username || '',
       firstName: document.getElementById('reg-firstname').value,
       lastName: document.getElementById('reg-lastname').value,
-      birthDate: `${day}.${month}.${year}`,
+      birthDate: `${d}.${m}.${y}`,
       photo: tgUser.photo_url || ''
-    };
-
-    const result = await api.post('/api/register', data);
+    });
+    
     if (result.success) {
       currentUser = await api.get(`/api/user/${tgUser.id}`);
       showScreen('main-screen');
-      setupNavigation();
+      setupNav();
       renderPage('progress');
-      showToast('Добро пожаловать!');
+      showToast('Добро пожаловать! 🎉');
     } else {
       showToast(result.message || 'Ошибка');
     }
@@ -141,7 +124,7 @@ function setupRegistration() {
 }
 
 // Навигация
-function setupNavigation() {
+function setupNav() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -152,12 +135,12 @@ function setupNavigation() {
 }
 
 function renderPage(page) {
-  const content = document.getElementById('page-content');
+  const c = document.getElementById('page-content');
   switch(page) {
-    case 'progress': content.innerHTML = renderProgress(); break;
-    case 'topics': content.innerHTML = renderTopics(); setupTabs(); break;
-    case 'diary': content.innerHTML = renderDiary(); break;
-    case 'settings': content.innerHTML = renderSettings(); setupSettingsEvents(); break;
+    case 'progress': c.innerHTML = renderProgress(); break;
+    case 'topics': c.innerHTML = renderTopics(); setupTabs(); break;
+    case 'diary': c.innerHTML = renderDiary(); break;
+    case 'settings': c.innerHTML = renderSettings(); setupSettingsEvents(); break;
   }
 }
 
@@ -168,30 +151,61 @@ function renderProgress() {
   const stickers = currentUser?.stickers || 0;
   const threshold = settings.giftThreshold || 5;
   const toGift = threshold - (stickers % threshold);
-  
-  let cells = '';
-  for (let i = 1; i <= 15; i++) {
-    const done = i <= stickers;
-    const isGift = i % threshold === 0;
-    const isCurrent = i === stickers + 1;
-    let cls = 'progress-cell';
-    if (done) cls += ' completed';
-    else if (isGift) cls += ' gift';
-    if (isCurrent) cls += ' current';
-    cells += `<div class="${cls}">${isGift && !done ? '🎁' : ''}</div>`;
-  }
-
   const showAlert = stickers > 0 && stickers % threshold === 0;
+  
+  // Показываем на 5 шагов вперёд от текущего
+  const totalSteps = Math.max(stickers + 5, 15);
+  
+  let roadItems = '';
+  for (let i = 1; i <= totalSteps; i++) {
+    const done = i <= stickers;
+    const isCurrent = i === stickers + 1;
+    const isGift = i % threshold === 0;
+    
+    let circleClass = 'step-circle';
+    if (done) circleClass += ' done';
+    if (isCurrent) circleClass += ' current';
+    if (isGift) circleClass += ' gift';
+    
+    const label = isGift ? `<span class="gift-label">🎁 Подарок!</span>` : `Шаг ${i}`;
+    
+    roadItems += `
+      <div class="road-item">
+        <div class="${circleClass}">${!done && !isGift ? i : ''}</div>
+        <div class="step-info">
+          <div class="step-num">#${i}</div>
+          <div class="step-label">${label}</div>
+        </div>
+      </div>
+    `;
+  }
 
   return `
     <div class="progress-page">
-      <h2>Моя дорожка</h2>
-      <div class="stickers-info">До подарка: <strong>${toGift === threshold ? threshold : toGift}</strong></div>
-      <div class="progress-grid">${cells}</div>
-      ${showAlert ? `<div class="gift-alert">🎉 Подойди к ${settings.adminUsername} за подарком!</div>` : ''}
+      <div class="progress-header">
+        <h2>Моя дорожка</h2>
+        <div class="progress-counter">
+          <span>До подарка:</span>
+          <span class="num">${toGift === threshold ? threshold : toGift}</span>
+          <span>🎁</span>
+        </div>
+      </div>
+      
+      <div class="road-container">
+        <div class="road">${roadItems}</div>
+      </div>
+      
+      ${showAlert ? `
+        <div class="gift-alert">
+          <span class="emoji">🎉</span>
+          <strong>Поздравляем!</strong>
+          <p>Подойди к ${settings.adminUsername} за сладким подарком!</p>
+        </div>
+      ` : ''}
     </div>
   `;
 }
+
 
 function renderTopics() {
   const visible = (topics || []).filter(t => !t.isHidden);
@@ -203,54 +217,47 @@ function renderTopics() {
   const currentHW = visibleHW.filter(h => new Date(h.dueDate) >= now);
   const pastHW = visibleHW.filter(h => new Date(h.dueDate) < now);
 
-  const renderCards = (items, type) => items.length ? items.map(t => {
+  const card = (items, type) => items.length ? items.map(t => {
     const isDone = type === 'hw' && (t.completedBy || []).includes(currentUser?.tgId);
     return `
       <div class="${type === 'hw' ? 'homework-card' : 'topic-card'} ${isDone ? 'completed' : ''}">
-        <h4>${t.title} ${isDone ? '✅' : ''}</h4>
+        <h4>${isDone ? '✅ ' : ''}${t.title}</h4>
         <div class="date">📅 ${t.date || t.dueDate}</div>
         ${t.description ? `<p>${t.description}</p>` : ''}
       </div>
     `;
-  }).join('') : `<div class="empty-state"><div class="icon">${type === 'hw' ? '✏️' : '📖'}</div><p>Пусто</p></div>`;
+  }).join('') : `<div class="empty-state"><div class="icon">${type === 'hw' ? '✏️' : '📖'}</div><p>Пока пусто</p></div>`;
 
   return `
     <div class="topics-page">
-      <h2>📚 Темы</h2>
+      <h2>📚 Темы занятий</h2>
       <div class="tabs" id="t-tabs">
         <button class="tab-btn active" data-t="cur-t">Текущие</button>
         <button class="tab-btn" data-t="past-t">Пройденные</button>
       </div>
-      <div id="cur-t" class="tab-content active">${renderCards(current, 'topic')}</div>
-      <div id="past-t" class="tab-content">${renderCards(past, 'topic')}</div>
+      <div id="cur-t" class="tab-content active">${card(current, 'topic')}</div>
+      <div id="past-t" class="tab-content">${card(past, 'topic')}</div>
       
-      <div class="homework-section">
-        <h3>📝 Домашние задания</h3>
-        <div class="tabs" id="hw-tabs">
-          <button class="tab-btn active" data-t="cur-hw">Текущие</button>
-          <button class="tab-btn" data-t="past-hw">Прошлые</button>
-        </div>
-        <div id="cur-hw" class="tab-content active">${renderCards(currentHW, 'hw')}</div>
-        <div id="past-hw" class="tab-content">${renderCards(pastHW, 'hw')}</div>
+      <h3 class="section-title">📝 Домашние задания</h3>
+      <div class="tabs" id="hw-tabs">
+        <button class="tab-btn active" data-t="cur-hw">Текущие</button>
+        <button class="tab-btn" data-t="past-hw">Прошлые</button>
       </div>
+      <div id="cur-hw" class="tab-content active">${card(currentHW, 'hw')}</div>
+      <div id="past-hw" class="tab-content">${card(pastHW, 'hw')}</div>
     </div>
   `;
 }
 
 function setupTabs() {
-  ['t-tabs', 'hw-tabs'].forEach(tabsId => {
-    document.querySelectorAll(`#${tabsId} .tab-btn`).forEach(btn => {
+  ['t-tabs', 'hw-tabs'].forEach(id => {
+    document.querySelectorAll(`#${id} .tab-btn`).forEach(btn => {
       btn.onclick = () => {
-        document.querySelectorAll(`#${tabsId} .tab-btn`).forEach(b => b.classList.remove('active'));
+        document.querySelectorAll(`#${id} .tab-btn`).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const parent = btn.closest('.topics-page') || btn.closest('.homework-section') || document;
-        parent.querySelectorAll('.tab-content').forEach(c => {
-          if (c.id === btn.dataset.t) c.classList.add('active');
-          else if ((tabsId === 't-tabs' && (c.id === 'cur-t' || c.id === 'past-t')) ||
-                   (tabsId === 'hw-tabs' && (c.id === 'cur-hw' || c.id === 'past-hw'))) {
-            c.classList.remove('active');
-          }
-        });
+        const tabs = id === 't-tabs' ? ['cur-t', 'past-t'] : ['cur-hw', 'past-hw'];
+        tabs.forEach(t => document.getElementById(t)?.classList.remove('active'));
+        document.getElementById(btn.dataset.t)?.classList.add('active');
       };
     });
   });
@@ -260,17 +267,29 @@ function renderDiary() {
   const u = currentUser || {};
   return `
     <div class="diary-page">
-      ${u.photo ? `<img src="${u.photo}" class="profile-photo">` : `<div class="profile-photo placeholder">👤</div>`}
-      <h2>${u.firstName || ''} ${u.lastName || ''}</h2>
-      ${u.username ? `<div class="username">@${u.username}</div>` : ''}
-      <div class="stats-grid">
-        <div class="stat-card stickers"><div class="value">${u.stickers || 0}</div><div class="label">Наклеек</div></div>
-        <div class="stat-card absences"><div class="value">${u.absences || 0}</div><div class="label">Пропусков</div></div>
+      <div class="profile-card">
+        ${u.photo ? `<img src="${u.photo}" class="profile-photo">` : `<div class="profile-photo placeholder">👤</div>`}
+        <div class="profile-name">${u.firstName || ''} ${u.lastName || ''}</div>
+        ${u.username ? `<div class="profile-username">@${u.username}</div>` : '<div style="height:20px"></div>'}
+        <div class="stats-row">
+          <div class="stat-box stickers">
+            <div class="value">${u.stickers || 0}</div>
+            <div class="label">Наклеек</div>
+          </div>
+          <div class="stat-box absences">
+            <div class="value">${u.absences || 0}</div>
+            <div class="label">Пропусков</div>
+          </div>
+        </div>
+        <div class="birthday-box">
+          <span class="emoji">🎂</span>
+          <span>${u.birthDate || 'Не указана'}</span>
+        </div>
       </div>
-      <div class="birthday-info">🎂 ${u.birthDate || 'Не указана'}</div>
     </div>
   `;
 }
+
 
 function renderSettings() {
   const u = currentUser || {};
@@ -278,38 +297,44 @@ function renderSettings() {
   return `
     <div class="settings-page">
       <h2>⚙️ Настройки</h2>
-      <div class="setting-item">
-        <label>Тёмная тема</label>
-        <div class="toggle ${u.theme === 'dark' ? 'active' : ''}" id="theme-toggle"></div>
+      
+      <div class="settings-card">
+        <div class="setting-item">
+          <label>Тёмная тема</label>
+          <div class="toggle ${u.theme === 'dark' ? 'active' : ''}" id="theme-toggle"></div>
+        </div>
       </div>
-      <div class="settings-section">
-        <h3>ЛИЧНЫЕ ДАННЫЕ</h3>
+      
+      <div class="section-header">Личные данные</div>
+      <div class="edit-form">
         <form id="edit-form">
           <input type="text" id="e-fn" value="${u.firstName || ''}" placeholder="Имя">
           <input type="text" id="e-ln" value="${u.lastName || ''}" placeholder="Фамилия">
-          <label>Дата рождения:</label>
-          <div class="date-inputs">
-            <input type="number" id="e-d" value="${bp[0] || ''}" placeholder="Д" min="1" max="31">
-            <input type="number" id="e-m" value="${bp[1] || ''}" placeholder="М" min="1" max="12">
+          <label>Дата рождения</label>
+          <div class="date-row">
+            <input type="number" id="e-d" value="${bp[0] || ''}" placeholder="Д">
+            <input type="number" id="e-m" value="${bp[1] || ''}" placeholder="М">
             <input type="number" id="e-y" value="${bp[2] || ''}" placeholder="Г">
           </div>
-          <button type="submit" class="btn-primary">Сохранить</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
         </form>
       </div>
-      <div class="settings-section">
-        <h3>АДМИНИСТРИРОВАНИЕ</h3>
-        <button class="admin-btn" id="admin-btn">🔐 ${u.isAdmin ? 'Админ панель' : 'Войти как админ'}</button>
-      </div>
+      
+      <button class="admin-btn" id="admin-btn">
+        🔐 ${u.isAdmin ? 'Админ панель' : 'Войти как админ'}
+      </button>
     </div>
+    
     <div class="admin-panel" id="admin-panel"></div>
+    
     <div class="modal" id="pwd-modal">
       <div class="modal-content">
-        <h3>Пароль администратора</h3>
+        <h3>🔐 Пароль администратора</h3>
         <form id="pwd-form">
-          <input type="password" id="pwd" placeholder="Пароль">
+          <input type="password" id="pwd" placeholder="Введите пароль">
           <div class="modal-buttons">
-            <button type="button" class="btn-secondary" id="close-pwd">Отмена</button>
-            <button type="submit" class="btn-primary">Войти</button>
+            <button type="button" class="btn btn-secondary" id="close-pwd">Отмена</button>
+            <button type="submit" class="btn btn-primary">Войти</button>
           </div>
         </form>
       </div>
@@ -337,7 +362,7 @@ function setupSettingsEvents() {
     };
     await api.put(`/api/user/${currentUser.tgId}`, data);
     currentUser = { ...currentUser, ...data };
-    showToast('Сохранено');
+    showToast('Сохранено ✓');
   });
   
   document.getElementById('admin-btn')?.addEventListener('click', () => {
@@ -356,14 +381,13 @@ function setupSettingsEvents() {
       currentUser.isAdmin = true;
       document.getElementById('pwd-modal').classList.remove('active');
       openAdmin();
-      showToast('Вы админ');
+      showToast('Добро пожаловать, админ! 👑');
     } else showToast('Неверный пароль');
   });
 }
 
 
-// === АДМИН ПАНЕЛЬ ===
-
+// === АДМИН ===
 let selectedUser = null;
 let adminTab = 'users';
 
@@ -373,8 +397,7 @@ async function openAdmin() {
   homework = await api.get('/api/homework');
   settings = await api.get('/api/settings');
   
-  const panel = document.getElementById('admin-panel');
-  panel.classList.add('active');
+  document.getElementById('admin-panel').classList.add('active');
   renderAdmin();
 }
 
@@ -384,26 +407,26 @@ function closeAdmin() {
 }
 
 function renderAdmin() {
-  const panel = document.getElementById('admin-panel');
-  panel.innerHTML = `
+  const p = document.getElementById('admin-panel');
+  p.innerHTML = `
     <div class="admin-header">
-      <h2>👑 Админ</h2>
+      <h2>👑 Админ панель</h2>
       <button class="close-btn" id="close-admin">✕</button>
     </div>
     <div class="admin-tabs">
-      <button class="admin-tab ${adminTab === 'users' ? 'active' : ''}" data-tab="users">Пользователи</button>
-      <button class="admin-tab ${adminTab === 'topics' ? 'active' : ''}" data-tab="topics">Темы</button>
-      <button class="admin-tab ${adminTab === 'homework' ? 'active' : ''}" data-tab="homework">ДЗ</button>
-      <button class="admin-tab ${adminTab === 'settings' ? 'active' : ''}" data-tab="settings">Настройки</button>
+      <button class="admin-tab ${adminTab === 'users' ? 'active' : ''}" data-tab="users">👥 Люди</button>
+      <button class="admin-tab ${adminTab === 'topics' ? 'active' : ''}" data-tab="topics">📚 Темы</button>
+      <button class="admin-tab ${adminTab === 'homework' ? 'active' : ''}" data-tab="homework">📝 ДЗ</button>
+      <button class="admin-tab ${adminTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️</button>
     </div>
-    <div id="admin-content">${renderAdminContent()}</div>
+    <div class="admin-content" id="admin-content">${renderAdminContent()}</div>
   `;
   setupAdminEvents();
 }
 
 function renderAdminContent() {
   switch(adminTab) {
-    case 'users': return renderAdminUsers();
+    case 'users': return renderUsers();
     case 'topics': return renderAdminTopics();
     case 'homework': return renderAdminHW();
     case 'settings': return renderAdminSettings();
@@ -412,15 +435,10 @@ function renderAdminContent() {
 
 function setupAdminEvents() {
   document.getElementById('close-admin')?.addEventListener('click', closeAdmin);
-  
   document.querySelectorAll('.admin-tab').forEach(t => {
-    t.onclick = () => {
-      adminTab = t.dataset.tab;
-      renderAdmin();
-    };
+    t.onclick = () => { adminTab = t.dataset.tab; renderAdmin(); };
   });
   
-  // События для текущей вкладки
   switch(adminTab) {
     case 'users': setupUserEvents(); break;
     case 'topics': setupTopicEvents(); break;
@@ -429,8 +447,8 @@ function setupAdminEvents() {
   }
 }
 
-// --- Пользователи ---
-function renderAdminUsers() {
+// Пользователи
+function renderUsers() {
   return `
     <div class="user-list">
       ${(allUsers || []).map(u => `
@@ -440,23 +458,18 @@ function renderAdminUsers() {
             <div class="user-name">${u.firstName || ''} ${u.lastName || ''} ${u.isBlocked ? '<span class="blocked-badge">БАН</span>' : ''}</div>
             <div class="user-id">${u.tgId} ${u.username ? `@${u.username}` : ''}</div>
           </div>
-          <div class="user-stats">
-            <div>🏷️${u.stickers || 0}</div>
-            <div>❌${u.absences || 0}</div>
-          </div>
+          <div class="user-stats">🏷️${u.stickers || 0} ❌${u.absences || 0}</div>
         </div>
-      `).join('') || '<div class="empty-state">Нет пользователей</div>'}
+      `).join('') || '<div class="empty-state"><p>Нет пользователей</p></div>'}
     </div>
-    <div class="id-input-section">
-      <input type="text" id="uid" placeholder="ID пользователя" value="${selectedUser || ''}">
-    </div>
-    <div class="action-buttons">
+    <div class="id-input"><input type="text" id="uid" placeholder="ID пользователя" value="${selectedUser || ''}"></div>
+    <div class="action-grid">
       <button class="action-btn add" data-act="addS">+🏷️</button>
       <button class="action-btn remove" data-act="remS">-🏷️</button>
       <button class="action-btn add" data-act="addA">+❌</button>
       <button class="action-btn remove" data-act="remA">-❌</button>
       <button class="action-btn ${selectedUser && allUsers.find(u => u.tgId === selectedUser)?.isBlocked ? 'add' : 'remove'}" data-act="block">
-        ${selectedUser && allUsers.find(u => u.tgId === selectedUser)?.isBlocked ? 'Разбан' : 'Бан'}
+        ${selectedUser && allUsers.find(u => u.tgId === selectedUser)?.isBlocked ? '✓Разбан' : '🚫Бан'}
       </button>
     </div>
   `;
@@ -469,11 +482,10 @@ function setupUserEvents() {
       document.getElementById('uid').value = selectedUser;
       document.querySelectorAll('.user-item').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
-      // Обновить кнопку бана
       const user = allUsers.find(u => u.tgId === selectedUser);
       const banBtn = document.querySelector('[data-act="block"]');
       if (banBtn && user) {
-        banBtn.textContent = user.isBlocked ? 'Разбан' : 'Бан';
+        banBtn.textContent = user.isBlocked ? '✓Разбан' : '🚫Бан';
         banBtn.className = `action-btn ${user.isBlocked ? 'add' : 'remove'}`;
       }
     };
@@ -483,7 +495,6 @@ function setupUserEvents() {
     btn.onclick = async () => {
       const id = document.getElementById('uid')?.value || selectedUser;
       if (!id) { showToast('Выберите пользователя'); return; }
-      
       const user = allUsers.find(u => u.tgId === id);
       if (!user) { showToast('Не найден'); return; }
       
@@ -499,39 +510,42 @@ function setupUserEvents() {
       await api.put(`/api/user/${id}`, upd);
       allUsers = await api.get('/api/users');
       if (id === currentUser?.tgId) currentUser = { ...currentUser, ...upd };
-      document.getElementById('admin-content').innerHTML = renderAdminUsers();
+      document.getElementById('admin-content').innerHTML = renderUsers();
       setupUserEvents();
-      showToast('Обновлено');
+      showToast('Обновлено ✓');
     };
   });
 }
 
-// --- Темы ---
+
+// Темы
 function renderAdminTopics() {
   return `
-    <button class="btn-primary" id="add-topic-btn" style="margin-bottom:12px">+ Тема</button>
+    <button class="btn btn-primary" id="add-topic-btn" style="margin-bottom:16px">+ Добавить тему</button>
     ${(topics || []).map(t => `
       <div class="topic-card">
         <h4>${t.title} ${t.isHidden ? '👁️‍🗨️' : ''} ${t.isCurrent ? '🔵' : ''}</h4>
         <div class="date">📅 ${t.date}</div>
-        <div class="action-buttons">
+        <div class="action-grid" style="margin-top:10px">
           <button class="action-btn edit" data-tid="${t.id}" data-tact="cur">${t.isCurrent ? '→Прошла' : '→Текущая'}</button>
           <button class="action-btn ${t.isHidden ? 'add' : 'remove'}" data-tid="${t.id}" data-tact="hide">${t.isHidden ? 'Показать' : 'Скрыть'}</button>
           <button class="action-btn remove" data-tid="${t.id}" data-tact="del">Удалить</button>
         </div>
       </div>
-    `).join('') || '<div class="empty-state">Нет тем</div>'}
+    `).join('') || '<div class="empty-state"><p>Нет тем</p></div>'}
     <div class="modal" id="topic-modal">
       <div class="modal-content">
-        <h3>Новая тема</h3>
+        <h3>📚 Новая тема</h3>
         <form id="topic-form">
           <input type="text" id="t-title" placeholder="Название" required>
           <input type="date" id="t-date" required>
           <textarea id="t-desc" placeholder="Описание" rows="2"></textarea>
-          <label><input type="checkbox" id="t-cur"> Текущая</label>
+          <label style="display:flex;align-items:center;gap:8px;margin:10px 0">
+            <input type="checkbox" id="t-cur" style="width:auto"> Текущая тема
+          </label>
           <div class="modal-buttons">
-            <button type="button" class="btn-secondary" id="close-t-modal">Отмена</button>
-            <button type="submit" class="btn-primary">Добавить</button>
+            <button type="button" class="btn btn-secondary" id="close-t-modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Добавить</button>
           </div>
         </form>
       </div>
@@ -543,11 +557,9 @@ function setupTopicEvents() {
   document.getElementById('add-topic-btn')?.addEventListener('click', () => {
     document.getElementById('topic-modal').classList.add('active');
   });
-  
   document.getElementById('close-t-modal')?.addEventListener('click', () => {
     document.getElementById('topic-modal').classList.remove('active');
   });
-  
   document.getElementById('topic-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     await api.post('/api/topics', {
@@ -560,7 +572,7 @@ function setupTopicEvents() {
     document.getElementById('topic-modal').classList.remove('active');
     document.getElementById('admin-content').innerHTML = renderAdminTopics();
     setupTopicEvents();
-    showToast('Добавлено');
+    showToast('Добавлено ✓');
   });
   
   document.querySelectorAll('[data-tact]').forEach(btn => {
@@ -577,59 +589,57 @@ function setupTopicEvents() {
   });
 }
 
-
-// --- ДЗ ---
+// ДЗ
 let currentHWId = null;
 
 function renderAdminHW() {
   return `
-    <button class="btn-primary" id="add-hw-btn" style="margin-bottom:12px">+ ДЗ</button>
+    <button class="btn btn-primary" id="add-hw-btn" style="margin-bottom:16px">+ Добавить ДЗ</button>
     ${(homework || []).map(h => `
       <div class="homework-card">
         <h4>${h.title} ${h.isHidden ? '👁️‍🗨️' : ''}</h4>
-        <div class="date">📅 ${h.dueDate} | Сделали: ${(h.completedBy || []).length}</div>
-        <div class="action-buttons">
+        <div class="date">📅 ${h.dueDate} | ✅ ${(h.completedBy || []).length}</div>
+        <div class="action-grid" style="margin-top:10px">
           <button class="action-btn edit" data-hid="${h.id}" data-hact="mark">Отметить</button>
           <button class="action-btn ${h.isHidden ? 'add' : 'remove'}" data-hid="${h.id}" data-hact="hide">${h.isHidden ? 'Показать' : 'Скрыть'}</button>
           <button class="action-btn remove" data-hid="${h.id}" data-hact="del">Удалить</button>
         </div>
       </div>
-    `).join('') || '<div class="empty-state">Нет ДЗ</div>'}
+    `).join('') || '<div class="empty-state"><p>Нет ДЗ</p></div>'}
     <div class="modal" id="hw-modal">
       <div class="modal-content">
-        <h3>Новое ДЗ</h3>
+        <h3>📝 Новое ДЗ</h3>
         <form id="hw-form">
           <input type="text" id="hw-title" placeholder="Название" required>
           <input type="date" id="hw-date" required>
           <textarea id="hw-desc" placeholder="Описание" rows="2"></textarea>
           <div class="modal-buttons">
-            <button type="button" class="btn-secondary" id="close-hw-modal">Отмена</button>
-            <button type="submit" class="btn-primary">Добавить</button>
+            <button type="button" class="btn btn-secondary" id="close-hw-modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Добавить</button>
           </div>
         </form>
       </div>
     </div>
     <div class="modal" id="mark-modal">
       <div class="modal-content">
-        <h3>Отметить выполнение</h3>
-        <div id="mark-list"></div>
+        <h3>✅ Отметить выполнение</h3>
+        <div id="mark-list" class="user-list"></div>
         <div class="modal-buttons">
-          <button class="btn-secondary" id="close-mark">Закрыть</button>
+          <button class="btn btn-secondary" id="close-mark">Закрыть</button>
         </div>
       </div>
     </div>
   `;
 }
 
+
 function setupHWEvents() {
   document.getElementById('add-hw-btn')?.addEventListener('click', () => {
     document.getElementById('hw-modal').classList.add('active');
   });
-  
   document.getElementById('close-hw-modal')?.addEventListener('click', () => {
     document.getElementById('hw-modal').classList.remove('active');
   });
-  
   document.getElementById('close-mark')?.addEventListener('click', () => {
     document.getElementById('mark-modal').classList.remove('active');
   });
@@ -645,22 +655,16 @@ function setupHWEvents() {
     document.getElementById('hw-modal').classList.remove('active');
     document.getElementById('admin-content').innerHTML = renderAdminHW();
     setupHWEvents();
-    showToast('Добавлено');
+    showToast('Добавлено ✓');
   });
   
   document.querySelectorAll('[data-hact]').forEach(btn => {
     btn.onclick = async () => {
       const id = btn.dataset.hid;
       const h = homework.find(x => x.id === id);
-      
-      if (btn.dataset.hact === 'mark') {
-        currentHWId = id;
-        showMarkModal();
-        return;
-      }
+      if (btn.dataset.hact === 'mark') { currentHWId = id; showMarkModal(); return; }
       if (btn.dataset.hact === 'hide') await api.put(`/api/homework/${id}`, { isHidden: !h.isHidden });
       else if (btn.dataset.hact === 'del') { if (!confirm('Удалить?')) return; await api.delete(`/api/homework/${id}`); }
-      
       homework = await api.get('/api/homework');
       document.getElementById('admin-content').innerHTML = renderAdminHW();
       setupHWEvents();
@@ -671,14 +675,13 @@ function setupHWEvents() {
 function showMarkModal() {
   const h = homework.find(x => x.id === currentHWId);
   const list = document.getElementById('mark-list');
-  
   list.innerHTML = (allUsers || []).map(u => {
     const done = (h.completedBy || []).includes(u.tgId);
     return `
       <div class="user-item ${done ? 'selected' : ''}" data-mark-uid="${u.tgId}">
         ${u.photo ? `<img src="${u.photo}">` : `<div class="user-avatar-placeholder">👤</div>`}
         <div class="user-info"><div class="user-name">${u.firstName || ''} ${u.lastName || ''}</div></div>
-        <div>${done ? '✅' : '⬜'}</div>
+        <div style="font-size:20px">${done ? '✅' : '⬜'}</div>
       </div>
     `;
   }).join('');
@@ -699,15 +702,15 @@ function showMarkModal() {
   document.getElementById('mark-modal').classList.add('active');
 }
 
-// --- Настройки админа ---
+// Настройки админа
 function renderAdminSettings() {
   return `
     <form id="admin-set-form">
-      <label>Username админа:</label>
+      <label>Username админа (для уведомлений)</label>
       <input type="text" id="a-user" value="${settings.adminUsername || ''}" placeholder="@username">
-      <label>Наклеек до подарка:</label>
+      <label>Наклеек до подарка</label>
       <input type="number" id="a-gift" value="${settings.giftThreshold || 5}" min="1">
-      <button type="submit" class="btn-primary">Сохранить</button>
+      <button type="submit" class="btn btn-primary" style="margin-top:10px">Сохранить</button>
     </form>
   `;
 }
@@ -720,7 +723,7 @@ function setupAdminSettingsEvents() {
       giftThreshold: parseInt(document.getElementById('a-gift').value) || 5
     });
     settings = await api.get('/api/settings');
-    showToast('Сохранено');
+    showToast('Сохранено ✓');
   });
 }
 

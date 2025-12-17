@@ -1,0 +1,262 @@
+const express = require('express');
+const cors = require('cors');
+const fetch = require('node-fetch');
+const path = require('path');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+const GITHUB_TOKEN = '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';
+const REPO_OWNER = 'mraiko23';
+const REPO_NAME = 'xristianindb';
+const FILE_PATH = 'db.json';
+
+// Получить данные из GitHub
+async function getDB() {
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+  });
+  const data = await res.json();
+  const content = Buffer.from(data.content, 'base64').toString('utf-8');
+  return { data: JSON.parse(content), sha: data.sha };
+}
+
+// Сохранить данные в GitHub
+async function saveDB(data, sha) {
+  const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
+  await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: 'Update db.json',
+      content: content,
+      sha: sha
+    })
+  });
+}
+
+// API endpoints
+app.get('/api/db', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/db', async (req, res) => {
+  try {
+    const { sha } = await getDB();
+    await saveDB(req.body, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
+// Получить пользователя по Telegram ID
+app.get('/api/user/:tgId', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    const user = data.users?.find(u => u.tgId === req.params.tgId);
+    res.json(user || null);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Регистрация пользователя
+app.post('/api/register', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    if (!data.users) data.users = [];
+    
+    const existing = data.users.find(u => u.tgId === req.body.tgId);
+    if (existing) {
+      return res.json({ success: false, message: 'Уже зарегистрирован' });
+    }
+    
+    data.users.push({
+      tgId: req.body.tgId,
+      username: req.body.username || '',
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      birthDate: req.body.birthDate,
+      photo: req.body.photo || '',
+      stickers: 0,
+      absences: 0,
+      isAdmin: false,
+      theme: 'light',
+      registeredAt: new Date().toISOString()
+    });
+    
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Обновить пользователя
+app.put('/api/user/:tgId', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    const idx = data.users?.findIndex(u => u.tgId === req.params.tgId);
+    if (idx === -1) return res.status(404).json({ error: 'User not found' });
+    
+    data.users[idx] = { ...data.users[idx], ...req.body };
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Получить все темы
+app.get('/api/topics', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    res.json(data.topics || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Добавить тему (админ)
+app.post('/api/topics', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    if (!data.topics) data.topics = [];
+    data.topics.push({
+      id: Date.now().toString(),
+      title: req.body.title,
+      date: req.body.date,
+      description: req.body.description || '',
+      isHidden: false,
+      isCurrent: req.body.isCurrent || false
+    });
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Обновить/удалить тему
+app.put('/api/topics/:id', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    const idx = data.topics?.findIndex(t => t.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'Topic not found' });
+    data.topics[idx] = { ...data.topics[idx], ...req.body };
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/topics/:id', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    data.topics = data.topics?.filter(t => t.id !== req.params.id) || [];
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Домашние задания
+app.get('/api/homework', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    res.json(data.homework || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/homework', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    if (!data.homework) data.homework = [];
+    data.homework.push({
+      id: Date.now().toString(),
+      title: req.body.title,
+      description: req.body.description,
+      dueDate: req.body.dueDate,
+      isHidden: false,
+      completedBy: []
+    });
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/homework/:id', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    const idx = data.homework?.findIndex(h => h.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'Homework not found' });
+    data.homework[idx] = { ...data.homework[idx], ...req.body };
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/homework/:id', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    data.homework = data.homework?.filter(h => h.id !== req.params.id) || [];
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Получить всех пользователей (для админа)
+app.get('/api/users', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    res.json(data.users || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Получить настройки (юзернейм админа и тд)
+app.get('/api/settings', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    res.json(data.settings || { adminUsername: '@admin', giftThreshold: 5 });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/settings', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    data.settings = { ...data.settings, ...req.body };
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

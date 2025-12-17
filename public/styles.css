@@ -126,7 +126,17 @@ input, textarea {
   margin-bottom: 12px;
   transition: all 0.3s;
   background: white;
-  color: var(--text);
+  color: #2d3436;
+}
+
+body.dark input, body.dark textarea {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: #ffffff;
+}
+
+body.dark input::placeholder, body.dark textarea::placeholder {
+  color: rgba(255,255,255,0.5);
 }
 
 input:focus, textarea:focus {

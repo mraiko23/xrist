@@ -624,8 +624,8 @@ function renderUsers() {
       <button class="action-btn remove" data-act="remS">-🏷️</button>
       <button class="action-btn add" data-act="addA">+❌</button>
       <button class="action-btn remove" data-act="remA">-❌</button>
-      <button class="action-btn ${selectedUser && allUsers.find(u => u.tgId === selectedUser)?.isBlocked ? 'add' : 'remove'}" data-act="block">
-        ${selectedUser && allUsers.find(u => u.tgId === selectedUser)?.isBlocked ? '✓Разбан' : '🚫Бан'}
+      <button class="action-btn ${selectedUser && allUsers.find(u => String(u.tgId) === String(selectedUser))?.isBlocked ? 'add' : 'remove'}" data-act="block">
+        ${selectedUser && allUsers.find(u => String(u.tgId) === String(selectedUser))?.isBlocked ? '✓Разбан' : '🚫Бан'}
       </button>
     </div>
   `;
@@ -638,7 +638,7 @@ function setupUserEvents() {
       document.getElementById('uid').value = selectedUser;
       document.querySelectorAll('.user-item').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
-      const user = allUsers.find(u => u.tgId === selectedUser);
+      const user = allUsers.find(u => String(u.tgId) === String(selectedUser));
       const banBtn = document.querySelector('[data-act="block"]');
       if (banBtn && user) {
         banBtn.textContent = user.isBlocked ? '✓Разбан' : '🚫Бан';
@@ -651,7 +651,7 @@ function setupUserEvents() {
     btn.onclick = async () => {
       const id = document.getElementById('uid')?.value || selectedUser;
       if (!id) { showToast('Выберите пользователя'); return; }
-      const user = allUsers.find(u => u.tgId === id);
+      const user = allUsers.find(u => String(u.tgId) === String(id));
       if (!user) { showToast('Не найден'); return; }
       
       let upd = {};

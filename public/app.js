@@ -137,7 +137,7 @@ function setupNav() {
 function renderPage(page) {
   const c = document.getElementById('page-content');
   switch(page) {
-    case 'progress': c.innerHTML = renderProgress(); break;
+    case 'progress': c.innerHTML = renderProgress(); setupInfiniteRoad(); break;
     case 'topics': c.innerHTML = renderTopics(); setupTabs(); break;
     case 'diary': c.innerHTML = renderDiary(); break;
     case 'settings': c.innerHTML = renderSettings(); setupSettingsEvents(); break;
@@ -147,38 +147,17 @@ function renderPage(page) {
 
 // === СТРАНИЦЫ ===
 
+let loadedSteps = 0;
+let isLoadingMore = false;
+
 function renderProgress() {
   const stickers = currentUser?.stickers || 0;
   const threshold = settings.giftThreshold || 5;
   const toGift = threshold - (stickers % threshold);
   const showAlert = stickers > 0 && stickers % threshold === 0;
   
-  // Показываем на 5 шагов вперёд от текущего
-  const totalSteps = Math.max(stickers + 5, 15);
-  
-  let roadItems = '';
-  for (let i = 1; i <= totalSteps; i++) {
-    const done = i <= stickers;
-    const isCurrent = i === stickers + 1;
-    const isGift = i % threshold === 0;
-    
-    let circleClass = 'step-circle';
-    if (done) circleClass += ' done';
-    if (isCurrent) circleClass += ' current';
-    if (isGift) circleClass += ' gift';
-    
-    const label = isGift ? `<span class="gift-label">🎁 Подарок!</span>` : `Шаг ${i}`;
-    
-    roadItems += `
-      <div class="road-item">
-        <div class="${circleClass}">${!done && !isGift ? i : ''}</div>
-        <div class="step-info">
-          <div class="step-num">#${i}</div>
-          <div class="step-label">${label}</div>
-        </div>
-      </div>
-    `;
-  }
+  // Начальное количество шагов
+  loadedSteps = Math.max(stickers + 10, 20);
 
   return `
     <div class="progress-page">
@@ -191,8 +170,11 @@ function renderProgress() {
         </div>
       </div>
       
-      <div class="road-container">
-        <div class="road">${roadItems}</div>
+      <div class="road-container" id="road-container">
+        <div class="road" id="road">${generateRoadItems(1, loadedSteps)}</div>
+        <div class="load-more" id="load-more">
+          <div class="load-spinner"></div>
+        </div>
       </div>
       
       ${showAlert ? `
@@ -206,6 +188,80 @@ function renderProgress() {
   `;
 }
 
+// Генерация шагов дорожки
+function generateRoadItems(from, to) {
+  const stickers = currentUser?.stickers || 0;
+  const threshold = settings.giftThreshold || 5;
+  let html = '';
+  
+  for (let i = from; i <= to; i++) {
+    const done = i <= stickers;
+    const isCurrent = i === stickers + 1;
+    const isGift = i % threshold === 0;
+    
+    let circleClass = 'step-circle';
+    if (done) circleClass += ' done';
+    if (isCurrent) circleClass += ' current';
+    if (isGift) circleClass += ' gift';
+    
+    const label = isGift ? `<span class="gift-label">🎁 Подарок!</span>` : `Шаг ${i}`;
+    
+    html += `
+      <div class="road-item" data-step="${i}">
+        <div class="${circleClass}">${!done && !isGift ? i : ''}</div>
+        <div class="step-info">
+          <div class="step-num">#${i}</div>
+          <div class="step-label">${label}</div>
+        </div>
+      </div>
+    `;
+  }
+  return html;
+}
+
+// Бесконечная подгрузка
+function setupInfiniteRoad() {
+  const container = document.getElementById('road-container');
+  if (!container) return;
+  
+  container.addEventListener('scroll', () => {
+    if (isLoadingMore) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    
+    // Если доскроллили почти до конца
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      loadMoreSteps();
+    }
+  });
+  
+  // Прокрутить к текущему шагу
+  setTimeout(() => {
+    const currentStep = document.querySelector('.step-circle.current');
+    if (currentStep) {
+      currentStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 300);
+}
+
+function loadMoreSteps() {
+  isLoadingMore = true;
+  const loader = document.getElementById('load-more');
+  if (loader) loader.style.display = 'flex';
+  
+  // Имитация загрузки
+  setTimeout(() => {
+    const road = document.getElementById('road');
+    const newFrom = loadedSteps + 1;
+    const newTo = loadedSteps + 15;
+    
+    road.insertAdjacentHTML('beforeend', generateRoadItems(newFrom, newTo));
+    loadedSteps = newTo;
+    
+    if (loader) loader.style.display = 'none';
+    isLoadingMore = false;
+  }, 300);
+}
 
 function renderTopics() {
   const visible = (topics || []).filter(t => !t.isHidden);
@@ -219,11 +275,13 @@ function renderTopics() {
 
   const card = (items, type) => items.length ? items.map(t => {
     const isDone = type === 'hw' && (t.completedBy || []).includes(currentUser?.tgId);
+    const dataAttr = type === 'hw' ? `data-hw-id="${t.id}"` : `data-topic-id="${t.id}"`;
     return `
-      <div class="${type === 'hw' ? 'homework-card' : 'topic-card'} ${isDone ? 'completed' : ''}">
+      <div class="${type === 'hw' ? 'homework-card clickable' : 'topic-card clickable'} ${isDone ? 'completed' : ''}" ${dataAttr}>
         <h4>${isDone ? '✅ ' : ''}${t.title}</h4>
         <div class="date">📅 ${t.date || t.dueDate}</div>
-        ${t.description ? `<p>${t.description}</p>` : ''}
+        ${t.description ? `<p class="preview">${t.description.substring(0, 50)}${t.description.length > 50 ? '...' : ''}</p>` : ''}
+        <div class="tap-hint">Нажми для подробностей →</div>
       </div>
     `;
   }).join('') : `<div class="empty-state"><div class="icon">${type === 'hw' ? '✏️' : '📖'}</div><p>Пока пусто</p></div>`;
@@ -246,6 +304,14 @@ function renderTopics() {
       <div id="cur-hw" class="tab-content active">${card(currentHW, 'hw')}</div>
       <div id="past-hw" class="tab-content">${card(pastHW, 'hw')}</div>
     </div>
+    
+    <!-- Модалка подробностей -->
+    <div class="detail-modal" id="detail-modal">
+      <div class="detail-content">
+        <button class="detail-close" id="detail-close">✕</button>
+        <div id="detail-body"></div>
+      </div>
+    </div>
   `;
 }
 
@@ -261,6 +327,96 @@ function setupTabs() {
       };
     });
   });
+  
+  // Клик на темы
+  document.querySelectorAll('[data-topic-id]').forEach(el => {
+    el.onclick = () => showTopicDetail(el.dataset.topicId);
+  });
+  
+  // Клик на ДЗ
+  document.querySelectorAll('[data-hw-id]').forEach(el => {
+    el.onclick = () => showHWDetail(el.dataset.hwId);
+  });
+  
+  // Закрыть модалку
+  document.getElementById('detail-close')?.addEventListener('click', closeDetailModal);
+  document.getElementById('detail-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'detail-modal') closeDetailModal();
+  });
+}
+
+function showTopicDetail(id) {
+  const t = topics.find(x => x.id === id);
+  if (!t) return;
+  
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div class="detail-icon">📚</div>
+    <div class="detail-badge ${t.isCurrent ? 'current' : 'past'}">${t.isCurrent ? 'Текущая тема' : 'Пройденная тема'}</div>
+    <h2 class="detail-title">${t.title}</h2>
+    <div class="detail-date">
+      <span>📅</span>
+      <span>${t.date}</span>
+    </div>
+    ${t.description ? `
+      <div class="detail-section">
+        <h3>Описание</h3>
+        <p>${t.description}</p>
+      </div>
+    ` : ''}
+    <div class="detail-section">
+      <h3>Что изучаем</h3>
+      <p>На этом занятии мы разбираем тему "${t.title}". Внимательно слушай и задавай вопросы!</p>
+    </div>
+  `;
+  
+  document.getElementById('detail-modal').classList.add('active');
+}
+
+function showHWDetail(id) {
+  const h = homework.find(x => x.id === id);
+  if (!h) return;
+  
+  const isDone = (h.completedBy || []).includes(currentUser?.tgId);
+  const dueDate = new Date(h.dueDate);
+  const now = new Date();
+  const isOverdue = dueDate < now && !isDone;
+  const daysLeft = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+  
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div class="detail-icon">${isDone ? '✅' : '📝'}</div>
+    <div class="detail-badge ${isDone ? 'done' : isOverdue ? 'overdue' : 'pending'}">
+      ${isDone ? 'Выполнено!' : isOverdue ? 'Просрочено' : `Осталось ${daysLeft} дн.`}
+    </div>
+    <h2 class="detail-title">${h.title}</h2>
+    <div class="detail-date">
+      <span>📅</span>
+      <span>Сдать до: ${h.dueDate}</span>
+    </div>
+    ${h.description ? `
+      <div class="detail-section">
+        <h3>📋 Задание</h3>
+        <p>${h.description}</p>
+      </div>
+    ` : ''}
+    <div class="detail-section">
+      <h3>💡 Подсказка</h3>
+      <p>Если возникли вопросы, обратись к преподавателю или напиши ${settings.adminUsername}</p>
+    </div>
+    <div class="detail-stats">
+      <div class="detail-stat">
+        <span class="num">${(h.completedBy || []).length}</span>
+        <span class="label">выполнили</span>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('detail-modal').classList.add('active');
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal')?.classList.remove('active');
 }
 
 function renderDiary() {

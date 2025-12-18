@@ -160,6 +160,19 @@ body.dark {
   height: 200%;
   background: conic-gradient(from 0deg, transparent, rgba(108,92,231,0.1), transparent 30%);
   animation: formGlow 4s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.form-card form,
+.form-card h2,
+.form-card > p,
+.form-card input,
+.form-card textarea,
+.form-card button,
+.form-card label {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes formGlow {

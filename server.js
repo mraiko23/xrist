@@ -19,7 +19,10 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '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';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+if (!GITHUB_TOKEN) {
+  console.error('GITHUB_TOKEN not set! Please set it in environment variables.');
+}
 const REPO_OWNER = process.env.REPO_OWNER || 'mraiko23';
 const REPO_NAME = process.env.REPO_NAME || 'xristianindb';
 const FILE_PATH = 'db.json';

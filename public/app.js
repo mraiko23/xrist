@@ -684,28 +684,28 @@ const PET_PHRASES = [
   '💭 Мне повезло с тобой!'
 ];
 
-// Магазин одежды для питомца
+// Магазин одежды для питомца (emoji для магазина, sprite для отображения на питомце)
 const PET_SHOP_ITEMS = [
   // Шапки
-  { id: 'hat_crown', emoji: '👑', name: 'Корона', type: 'hat', price: 3 },
-  { id: 'hat_cap', emoji: '🧢', name: 'Кепка', type: 'hat', price: 2 },
-  { id: 'hat_tophat', emoji: '🎩', name: 'Цилиндр', type: 'hat', price: 4 },
-  { id: 'hat_party', emoji: '🎉', name: 'Колпак', type: 'hat', price: 2 },
-  { id: 'hat_cowboy', emoji: '🤠', name: 'Ковбойская', type: 'hat', price: 3 },
-  { id: 'hat_santa', emoji: '🎅', name: 'Новогодняя', type: 'hat', price: 5 },
+  { id: 'hat_crown', emoji: '👑', name: 'Корона', type: 'hat', price: 3, color: '#ffd700' },
+  { id: 'hat_cap', emoji: '🧢', name: 'Кепка', type: 'hat', price: 2, color: '#3498db' },
+  { id: 'hat_tophat', emoji: '🎩', name: 'Цилиндр', type: 'hat', price: 4, color: '#2c3e50' },
+  { id: 'hat_party', emoji: '🎊', name: 'Колпак', type: 'hat', price: 2, color: '#e74c3c' },
+  { id: 'hat_cowboy', emoji: '🤠', name: 'Ковбойская', type: 'hat', price: 3, color: '#8b4513' },
+  { id: 'hat_santa', emoji: '🎄', name: 'Новогодняя', type: 'hat', price: 5, color: '#c0392b' },
   // Шарфы
-  { id: 'scarf_red', emoji: '🧣', name: 'Красный шарф', type: 'scarf', price: 2 },
-  { id: 'scarf_rainbow', emoji: '🌈', name: 'Радужный', type: 'scarf', price: 4 },
-  { id: 'scarf_gold', emoji: '✨', name: 'Золотой', type: 'scarf', price: 5 },
+  { id: 'scarf_red', emoji: '🧣', name: 'Красный шарф', type: 'scarf', price: 2, color: '#e74c3c' },
+  { id: 'scarf_rainbow', emoji: '🌈', name: 'Радужный', type: 'scarf', price: 4, color: 'rainbow' },
+  { id: 'scarf_gold', emoji: '✨', name: 'Золотой', type: 'scarf', price: 5, color: '#f1c40f' },
   // Обувь
-  { id: 'shoes_sneakers', emoji: '👟', name: 'Кроссовки', type: 'shoes', price: 3 },
-  { id: 'shoes_boots', emoji: '👢', name: 'Сапожки', type: 'shoes', price: 3 },
-  { id: 'shoes_slippers', emoji: '🥿', name: 'Тапочки', type: 'shoes', price: 2 },
+  { id: 'shoes_sneakers', emoji: '👟', name: 'Кроссовки', type: 'shoes', price: 3, color: '#3498db' },
+  { id: 'shoes_boots', emoji: '👢', name: 'Сапожки', type: 'shoes', price: 3, color: '#8b4513' },
+  { id: 'shoes_slippers', emoji: '🥿', name: 'Тапочки', type: 'shoes', price: 2, color: '#e91e63' },
   // Аксессуары
-  { id: 'acc_glasses', emoji: '😎', name: 'Очки', type: 'accessory', price: 2 },
-  { id: 'acc_bow', emoji: '🎀', name: 'Бантик', type: 'accessory', price: 1 },
-  { id: 'acc_medal', emoji: '🏅', name: 'Медаль', type: 'accessory', price: 4 },
-  { id: 'acc_heart', emoji: '💖', name: 'Сердечко', type: 'accessory', price: 2 }
+  { id: 'acc_glasses', emoji: '🕶️', name: 'Очки', type: 'accessory', price: 2, color: '#2c3e50' },
+  { id: 'acc_bow', emoji: '🎀', name: 'Бантик', type: 'accessory', price: 1, color: '#e91e63' },
+  { id: 'acc_medal', emoji: '🏅', name: 'Медаль', type: 'accessory', price: 4, color: '#f1c40f' },
+  { id: 'acc_heart', emoji: '💖', name: 'Сердечко', type: 'accessory', price: 2, color: '#e74c3c' }
 ];
 
 function getPetData() {
@@ -769,22 +769,48 @@ function renderPetOutfitOnPet(pet) {
   // Шапка сверху
   if (outfit.hat) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.hat);
-    if (item) items.push(`<span class="outfit-hat">${item.emoji}</span>`);
+    if (item) {
+      const colorStyle = item.color ? `--item-color: ${item.color};` : '';
+      let innerContent = '';
+      if (item.id === 'hat_santa') {
+        innerContent = '<div class="pompom"></div>';
+      } else if (item.id === 'hat_crown') {
+        innerContent = '<div class="crown-gem"></div>';
+      }
+      items.push(`<div class="outfit-sprite outfit-hat sprite-${item.id}" style="${colorStyle}">${innerContent}</div>`);
+    }
   }
   // Аксессуар справа
   if (outfit.accessory) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.accessory);
-    if (item) items.push(`<span class="outfit-accessory">${item.emoji}</span>`);
+    if (item) {
+      const colorStyle = item.color ? `--item-color: ${item.color};` : '';
+      let innerContent = '';
+      if (item.id === 'acc_bow') {
+        innerContent = '<div class="bow-center"></div>';
+      } else if (item.id === 'acc_medal') {
+        innerContent = '<div class="medal-star"></div>';
+      } else if (item.id === 'acc_glasses') {
+        innerContent = '<div class="glasses-bridge"></div>';
+      }
+      items.push(`<div class="outfit-sprite outfit-accessory sprite-${item.id}" style="${colorStyle}">${innerContent}</div>`);
+    }
   }
   // Шарф слева
   if (outfit.scarf) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.scarf);
-    if (item) items.push(`<span class="outfit-scarf">${item.emoji}</span>`);
+    if (item) {
+      const colorStyle = item.color === 'rainbow' ? '--item-color: #e74c3c;' : `--item-color: ${item.color};`;
+      items.push(`<div class="outfit-sprite outfit-scarf sprite-${item.id}" style="${colorStyle}"></div>`);
+    }
   }
   // Обувь снизу
   if (outfit.shoes) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.shoes);
-    if (item) items.push(`<span class="outfit-shoes">${item.emoji}</span>`);
+    if (item) {
+      const colorStyle = item.color ? `--item-color: ${item.color};` : '';
+      items.push(`<div class="outfit-sprite outfit-shoes sprite-${item.id}" style="${colorStyle}"><span class="shoe-left"></span><span class="shoe-right"></span></div>`);
+    }
   }
   
   return items.join('');
@@ -1235,6 +1261,15 @@ function setupPetEvents() {
   
   // ===== ИНВЕНТАРЬ =====
   document.getElementById('open-inventory-btn')?.addEventListener('click', () => {
+    // Обновляем содержимое инвентаря при открытии
+    const pet = getPetData();
+    if (pet) {
+      const inventoryEl = document.getElementById('inventory-items');
+      const currentOutfitEl = document.querySelector('.current-outfit');
+      if (inventoryEl) inventoryEl.innerHTML = renderInventoryItems(pet);
+      if (currentOutfitEl) currentOutfitEl.innerHTML = renderCurrentOutfit(pet);
+      setupInventoryButtons();
+    }
     inventoryModal?.classList.add('active');
   });
   
@@ -1292,11 +1327,25 @@ function setupShopBuyButtons() {
       
       showToast(`${item.emoji} ${item.name} куплено! 🎉`);
       
-      // Обновляем UI
+      // Обновляем UI магазина
       document.querySelector('.shop-balance').textContent = `🌟 ${newStickers}`;
       const activeTab = document.querySelector('.shop-tab.active');
       document.getElementById('shop-items').innerHTML = renderShopItems(activeTab?.dataset.type || 'hat', pet);
       setupShopBuyButtons();
+      
+      // Обновляем инвентарь
+      const inventoryEl = document.getElementById('inventory-items');
+      if (inventoryEl) {
+        inventoryEl.innerHTML = renderInventoryItems(pet);
+        setupInventoryButtons();
+      }
+      
+      // Обновляем текущую одежду в инвентаре
+      const currentOutfitEl = document.querySelector('.current-outfit');
+      if (currentOutfitEl) {
+        currentOutfitEl.innerHTML = renderCurrentOutfit(pet);
+        setupInventoryButtons();
+      }
     };
   });
 }

@@ -3357,7 +3357,8 @@ button, input, textarea {
   align-items: center;
   justify-content: center;
   width: 140px;
-  height: 140px;
+  height: 160px;
+  margin: 0 auto;
 }
 
 .pet-avatar-wrapper .pet-avatar {
@@ -3373,7 +3374,7 @@ button, input, textarea {
 
 /* ===== ШАПКИ ===== */
 .outfit-item.outfit-hat {
-  top: -5px;
+  top: 15px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -3550,10 +3551,10 @@ button, input, textarea {
 
 /* ===== ШАРФЫ ===== */
 .outfit-item.outfit-scarf {
-  bottom: 30px;
+  top: 85px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 5;
+  z-index: 3;
   animation: scarfSway 4s ease-in-out infinite;
 }
 
@@ -3651,7 +3652,7 @@ button, input, textarea {
 
 /* ===== ОБУВЬ ===== */
 .outfit-item.outfit-shoes {
-  bottom: 5px;
+  bottom: 15px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1;
@@ -3712,9 +3713,9 @@ button, input, textarea {
 
 /* ===== АКСЕССУАРЫ ===== */
 .outfit-item.outfit-accessory {
-  top: 40%;
+  top: 55px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 15;
 }
 

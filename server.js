@@ -2,12 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
+
+// Папка для хранения медиафайлов
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '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';
 const REPO_OWNER = process.env.REPO_OWNER || 'mraiko23';
@@ -273,21 +281,45 @@ app.post('/api/submissions', async (req, res) => {
   try {
     const { data, sha } = await getDB();
     if (!data.submissions) data.submissions = [];
+    
+    const submissionId = Date.now().toString();
+    const mediaFiles = [];
+    
+    // Сохраняем медиафайлы на диск
+    if (req.body.media && req.body.media.length > 0) {
+      for (let i = 0; i < req.body.media.length; i++) {
+        const mediaItem = req.body.media[i];
+        const base64Data = mediaItem.data.replace(/^data:[^;]+;base64,/, '');
+        const ext = mediaItem.type === 'video' ? '.mp4' : '.jpg';
+        const filename = `${submissionId}_${i}${ext}`;
+        const filepath = path.join(UPLOADS_DIR, filename);
+        
+        fs.writeFileSync(filepath, base64Data, 'base64');
+        
+        mediaFiles.push({
+          url: `/uploads/${filename}`,
+          type: mediaItem.type,
+          name: mediaItem.name
+        });
+      }
+    }
+    
     data.submissions.push({
-      id: Date.now().toString(),
+      id: submissionId,
       hwId: req.body.hwId,
       hwTitle: req.body.hwTitle,
       tgId: req.body.tgId,
       userName: req.body.userName,
-      media: req.body.media || [], // массив {data, type, name}
-      photo: req.body.photo || '', // для обратной совместимости
+      media: mediaFiles, // теперь храним только URL
       comment: req.body.comment || '',
-      status: 'pending', // pending, approved, rejected
+      status: 'pending',
       submittedAt: new Date().toISOString()
     });
+    
     await saveDB(data, sha);
     res.json({ success: true });
   } catch (e) {
+    console.error('Submission error:', e);
     res.status(500).json({ error: e.message });
   }
 });

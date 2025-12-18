@@ -12,22 +12,50 @@ let tgUser = null;
 
 // API
 const api = {
-  async get(url) { return (await fetch(url)).json(); },
+  async get(url) { 
+    try {
+      const res = await fetch(url);
+      return res.json();
+    } catch (e) {
+      console.error('API GET error:', e);
+      return { error: e.message };
+    }
+  },
   async post(url, data) {
-    return (await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })).json();
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return res.json();
+    } catch (e) {
+      console.error('API POST error:', e);
+      return { error: e.message };
+    }
   },
   async put(url, data) {
-    return (await fetch(url, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })).json();
+    try {
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return res.json();
+    } catch (e) {
+      console.error('API PUT error:', e);
+      return { error: e.message };
+    }
   },
-  async delete(url) { return (await fetch(url, { method: 'DELETE' })).json(); }
+  async delete(url) { 
+    try {
+      const res = await fetch(url, { method: 'DELETE' });
+      return res.json();
+    } catch (e) {
+      console.error('API DELETE error:', e);
+      return { error: e.message };
+    }
+  }
 };
 
 // Инициализация
@@ -470,19 +498,35 @@ function showHWDetail(id) {
       preview.innerHTML = '';
       
       if (files.length > 0) {
-        document.getElementById('media-preview-text').textContent = `✅ Выбрано: ${files.length} файл(ов)`;
+        // Проверяем размер
+        const MAX_FILE_SIZE = 20 * 1024 * 1024;
+        let hasLargeFile = false;
+        let totalSize = 0;
+        
+        files.forEach(f => {
+          totalSize += f.size;
+          if (f.size > MAX_FILE_SIZE) hasLargeFile = true;
+        });
+        
+        const sizeMB = (totalSize / 1024 / 1024).toFixed(1);
+        const sizeWarning = totalSize > 50 * 1024 * 1024 || hasLargeFile;
+        
+        document.getElementById('media-preview-text').textContent = 
+          `✅ Выбрано: ${files.length} файл(ов) (${sizeMB}MB)${sizeWarning ? ' ⚠️' : ''}`;
+        
+        if (sizeWarning) {
+          preview.innerHTML = '<div class="size-warning">⚠️ Файлы слишком большие! Макс: 20MB на файл, 50MB всего</div>';
+        }
         
         files.forEach((file, idx) => {
           const isVideo = file.type.startsWith('video/');
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            if (isVideo) {
-              preview.innerHTML += `<div class="preview-item video"><video src="${ev.target.result}" controls></video><span class="remove-media" data-idx="${idx}">✕</span></div>`;
-            } else {
-              preview.innerHTML += `<div class="preview-item"><img src="${ev.target.result}" alt="preview"><span class="remove-media" data-idx="${idx}">✕</span></div>`;
-            }
-          };
-          reader.readAsDataURL(file);
+          // Для превью используем URL.createObjectURL вместо base64 (быстрее)
+          const objectUrl = URL.createObjectURL(file);
+          if (isVideo) {
+            preview.innerHTML += `<div class="preview-item video"><video src="${objectUrl}"></video></div>`;
+          } else {
+            preview.innerHTML += `<div class="preview-item"><img src="${objectUrl}" alt="preview"></div>`;
+          }
         });
       }
     });
@@ -496,37 +540,70 @@ function showHWDetail(id) {
       const comment = document.getElementById('hw-comment')?.value || '';
       const files = mediaInput?.files ? Array.from(mediaInput.files) : [];
       
-      // Конвертируем все файлы в base64
-      const mediaData = [];
+      // Проверка размера файлов (макс 20MB на файл, 50MB всего)
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+      const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+      let totalSize = 0;
+      
       for (const file of files) {
-        const data = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (ev) => resolve({
-            data: ev.target.result,
-            type: file.type.startsWith('video/') ? 'video' : 'image',
-            name: file.name
-          });
-          reader.readAsDataURL(file);
-        });
-        mediaData.push(data);
+        if (file.size > MAX_FILE_SIZE) {
+          showToast(`Файл "${file.name}" слишком большой (макс 20MB)`);
+          return;
+        }
+        totalSize += file.size;
       }
       
-      const result = await api.post('/api/submissions', {
-        hwId,
-        hwTitle,
-        tgId: currentUser.tgId,
-        userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim(),
-        media: mediaData,
-        comment
-      });
+      if (totalSize > MAX_TOTAL_SIZE) {
+        showToast('Общий размер файлов слишком большой (макс 50MB)');
+        return;
+      }
       
-      if (result.success) {
-        submissions = await api.get('/api/submissions');
-        closeDetailModal();
-        showToast('Отправлено на проверку! ✅');
-        renderPage('topics');
-      } else {
-        showToast('Ошибка отправки');
+      // Показываем загрузку
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = '⏳ Загрузка...';
+      submitBtn.disabled = true;
+      
+      try {
+        // Конвертируем все файлы в base64
+        const mediaData = [];
+        for (const file of files) {
+          const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve({
+              data: ev.target.result,
+              type: file.type.startsWith('video/') ? 'video' : 'image',
+              name: file.name
+            });
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          mediaData.push(data);
+        }
+        
+        const result = await api.post('/api/submissions', {
+          hwId,
+          hwTitle,
+          tgId: currentUser.tgId,
+          userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim(),
+          media: mediaData,
+          comment
+        });
+        
+        if (result.success) {
+          submissions = await api.get('/api/submissions');
+          closeDetailModal();
+          showToast('Отправлено на проверку! ✅');
+          renderPage('topics');
+        } else {
+          showToast(result.error || 'Ошибка отправки');
+        }
+      } catch (err) {
+        console.error('Submit error:', err);
+        showToast('Ошибка при отправке. Попробуйте файлы меньшего размера.');
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
       }
     });
   }
@@ -1122,14 +1199,16 @@ function showSubmissionDetail(sub) {
   const detail = document.getElementById('sub-detail');
   const date = new Date(sub.submittedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   
-  // Поддержка старого формата (photo) и нового (media)
+  // Поддержка URL (новый формат) и base64 (старый формат)
   let mediaHtml = '';
   if (sub.media && sub.media.length > 0) {
     mediaHtml = `<div class="sub-media-gallery">${sub.media.map(m => {
+      // m.url для нового формата, m.data для старого
+      const src = m.url || m.data;
       if (m.type === 'video') {
-        return `<div class="gallery-item video"><video src="${m.data}" controls></video></div>`;
+        return `<div class="gallery-item video"><video src="${src}" controls></video></div>`;
       }
-      return `<div class="gallery-item"><img src="${m.data}" alt="Фото"></div>`;
+      return `<div class="gallery-item"><img src="${src}" alt="Фото"></div>`;
     }).join('')}</div>`;
   } else if (sub.photo) {
     mediaHtml = `<div class="sub-photo-full"><img src="${sub.photo}" alt="Фото работы"></div>`;

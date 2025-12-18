@@ -29,17 +29,29 @@ const FILE_PATH = 'db.json';
 
 // Получить данные из GitHub
 async function getDB() {
+  if (!GITHUB_TOKEN) {
+    throw new Error('GITHUB_TOKEN не настроен на сервере');
+  }
+  
   const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
     headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
   });
   
+  const text = await res.text();
+  
   if (!res.ok) {
-    const err = await res.json();
-    console.error('GitHub getDB error:', err);
-    throw new Error(`GitHub API error: ${err.message || res.status}`);
+    console.error('GitHub getDB error:', res.status, text);
+    if (res.status === 401) {
+      throw new Error('GitHub токен недействителен или отозван');
+    }
+    throw new Error(`GitHub API error: ${res.status}`);
   }
   
-  const data = await res.json();
+  if (!text) {
+    throw new Error('Пустой ответ от GitHub API');
+  }
+  
+  const data = JSON.parse(text);
   const content = Buffer.from(data.content, 'base64').toString('utf-8');
   return { data: JSON.parse(content), sha: data.sha };
 }

@@ -27,6 +27,87 @@ const REPO_OWNER = process.env.REPO_OWNER || 'mraiko23';
 const REPO_NAME = process.env.REPO_NAME || 'xristianindb';
 const FILE_PATH = 'db.json';
 
+// Шаблон базы данных
+const DB_TEMPLATE = {
+  users: [],
+  topics: [],
+  homework: [],
+  submissions: [],
+  settings: {
+    adminUsername: "@admin",
+    giftThreshold: 5
+  }
+};
+
+// Создать файл в GitHub
+async function createFileInGitHub(filePath, content, message) {
+  const base64Content = Buffer.from(content).toString('base64');
+  
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: message,
+      content: base64Content
+    })
+  });
+  
+  if (!res.ok) {
+    const err = await res.text();
+    console.error(`Failed to create ${filePath}:`, err);
+    throw new Error(`Failed to create ${filePath}`);
+  }
+  
+  console.log(`Created ${filePath} in GitHub`);
+  return true;
+}
+
+// Проверить и создать db.json если не существует
+async function ensureDBExists() {
+  if (!GITHUB_TOKEN) {
+    console.error('GITHUB_TOKEN not set!');
+    return false;
+  }
+  
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+  });
+  
+  if (res.status === 404) {
+    console.log('db.json not found, creating...');
+    await createFileInGitHub(FILE_PATH, JSON.stringify(DB_TEMPLATE, null, 2), 'Initialize db.json');
+    return true;
+  }
+  
+  if (!res.ok) {
+    console.error('Error checking db.json:', res.status);
+    return false;
+  }
+  
+  console.log('db.json exists');
+  return true;
+}
+
+// Создать .gitkeep в uploads если папка не существует
+async function ensureUploadsFolder() {
+  if (!GITHUB_TOKEN) return false;
+  
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/uploads/.gitkeep`, {
+    headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+  });
+  
+  if (res.status === 404) {
+    console.log('uploads folder not found, creating...');
+    await createFileInGitHub('uploads/.gitkeep', '', 'Create uploads folder');
+    return true;
+  }
+  
+  return true;
+}
+
 // Получить данные из GitHub
 async function getDB() {
   if (!GITHUB_TOKEN) {
@@ -36,6 +117,14 @@ async function getDB() {
   const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
     headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
   });
+  
+  // Если файл не существует - создаём
+  if (res.status === 404) {
+    console.log('db.json not found, creating...');
+    await createFileInGitHub(FILE_PATH, JSON.stringify(DB_TEMPLATE, null, 2), 'Initialize db.json');
+    // Получаем заново
+    return getDB();
+  }
   
   const text = await res.text();
   
@@ -53,7 +142,16 @@ async function getDB() {
   
   const data = JSON.parse(text);
   const content = Buffer.from(data.content, 'base64').toString('utf-8');
-  return { data: JSON.parse(content), sha: data.sha };
+  const dbData = JSON.parse(content);
+  
+  // Убедимся что все поля существуют
+  if (!dbData.users) dbData.users = [];
+  if (!dbData.topics) dbData.topics = [];
+  if (!dbData.homework) dbData.homework = [];
+  if (!dbData.submissions) dbData.submissions = [];
+  if (!dbData.settings) dbData.settings = DB_TEMPLATE.settings;
+  
+  return { data: dbData, sha: data.sha };
 }
 
 // Загрузить файл в GitHub
@@ -468,11 +566,32 @@ app.get('/ping', (req, res) => {
   res.json({ status: 'alive', time: new Date().toISOString() });
 });
 
+// Эндпоинт для инициализации (можно вызвать вручную)
+app.get('/api/init', async (req, res) => {
+  try {
+    await ensureDBExists();
+    await ensureUploadsFolder();
+    res.json({ success: true, message: 'Initialized successfully' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 const SELF_URL = process.env.RENDER_EXTERNAL_URL || 'https://xrist.onrender.com';
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Инициализация GitHub репозитория
+  try {
+    console.log('Initializing GitHub repository...');
+    await ensureDBExists();
+    await ensureUploadsFolder();
+    console.log('GitHub repository initialized successfully');
+  } catch (e) {
+    console.error('Failed to initialize GitHub repository:', e.message);
+  }
   
   // Self-ping каждые 90 секунд чтобы Render не засыпал
   setInterval(async () => {

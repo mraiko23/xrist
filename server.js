@@ -5,7 +5,8 @@ const path = require('path');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static('public'));
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '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';
@@ -251,6 +252,63 @@ app.put('/api/settings', async (req, res) => {
   try {
     const { data, sha } = await getDB();
     data.settings = { ...data.settings, ...req.body };
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Заявки на проверку ДЗ
+app.get('/api/submissions', async (req, res) => {
+  try {
+    const { data } = await getDB();
+    res.json(data.submissions || []);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/submissions', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    if (!data.submissions) data.submissions = [];
+    data.submissions.push({
+      id: Date.now().toString(),
+      hwId: req.body.hwId,
+      hwTitle: req.body.hwTitle,
+      tgId: req.body.tgId,
+      userName: req.body.userName,
+      media: req.body.media || [], // массив {data, type, name}
+      photo: req.body.photo || '', // для обратной совместимости
+      comment: req.body.comment || '',
+      status: 'pending', // pending, approved, rejected
+      submittedAt: new Date().toISOString()
+    });
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/submissions/:id', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    const idx = data.submissions?.findIndex(s => s.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ error: 'Submission not found' });
+    data.submissions[idx] = { ...data.submissions[idx], ...req.body };
+    await saveDB(data, sha);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/submissions/:id', async (req, res) => {
+  try {
+    const { data, sha } = await getDB();
+    data.submissions = data.submissions?.filter(s => s.id !== req.params.id) || [];
     await saveDB(data, sha);
     res.json({ success: true });
   } catch (e) {

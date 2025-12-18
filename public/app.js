@@ -6,6 +6,7 @@ let currentUser = null;
 let allUsers = [];
 let topics = [];
 let homework = [];
+let submissions = [];
 let settings = { adminUsername: '@admin', giftThreshold: 5 };
 let tgUser = null;
 
@@ -46,10 +47,11 @@ async function init() {
   tg.setBackgroundColor('#667eea');
   
   try {
-    [settings, topics, homework] = await Promise.all([
+    [settings, topics, homework, submissions] = await Promise.all([
       api.get('/api/settings').catch(() => ({ adminUsername: '@admin', giftThreshold: 5 })),
       api.get('/api/topics').catch(() => []),
-      api.get('/api/homework').catch(() => [])
+      api.get('/api/homework').catch(() => []),
+      api.get('/api/submissions').catch(() => [])
     ]);
 
     const userData = await api.get(`/api/user/${tgUser.id}`);
@@ -378,17 +380,37 @@ function showHWDetail(id) {
   if (!h) return;
   
   const isDone = (h.completedBy || []).includes(currentUser?.tgId);
+  const mySubmission = submissions.find(s => s.hwId === id && s.tgId === currentUser?.tgId);
   const dueDate = new Date(h.dueDate);
   const now = new Date();
   const isOverdue = dueDate < now && !isDone;
   const daysLeft = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
   
+  let statusBadge = '';
+  let statusText = '';
+  if (isDone) {
+    statusBadge = 'done';
+    statusText = 'Выполнено!';
+  } else if (mySubmission) {
+    if (mySubmission.status === 'pending') {
+      statusBadge = 'pending';
+      statusText = '⏳ На проверке';
+    } else if (mySubmission.status === 'rejected') {
+      statusBadge = 'overdue';
+      statusText = '❌ Отклонено';
+    }
+  } else if (isOverdue) {
+    statusBadge = 'overdue';
+    statusText = 'Просрочено';
+  } else {
+    statusBadge = 'pending';
+    statusText = `Осталось ${daysLeft} дн.`;
+  }
+  
   const body = document.getElementById('detail-body');
   body.innerHTML = `
-    <div class="detail-icon">${isDone ? '✅' : '📝'}</div>
-    <div class="detail-badge ${isDone ? 'done' : isOverdue ? 'overdue' : 'pending'}">
-      ${isDone ? 'Выполнено!' : isOverdue ? 'Просрочено' : `Осталось ${daysLeft} дн.`}
-    </div>
+    <div class="detail-icon">${isDone ? '✅' : mySubmission?.status === 'pending' ? '⏳' : '📝'}</div>
+    <div class="detail-badge ${statusBadge}">${statusText}</div>
     <h2 class="detail-title">${h.title}</h2>
     <div class="detail-date">
       <span>📅</span>
@@ -398,6 +420,29 @@ function showHWDetail(id) {
       <div class="detail-section">
         <h3>📋 Задание</h3>
         <p>${h.description}</p>
+      </div>
+    ` : ''}
+    ${!isDone && (!mySubmission || mySubmission.status === 'rejected') ? `
+      <div class="detail-section submit-section">
+        <h3>📤 Отправить на проверку</h3>
+        <form id="submit-hw-form" data-hw-id="${h.id}" data-hw-title="${h.title}">
+          <div class="media-upload">
+            <label class="upload-btn" for="hw-media">
+              <span id="media-preview-text">📷 Прикрепить фото/видео</span>
+            </label>
+            <input type="file" id="hw-media" accept="image/*,video/*" multiple style="display:none">
+            <div id="media-preview" class="media-preview"></div>
+            <div class="upload-hint">Можно выбрать несколько файлов</div>
+          </div>
+          <textarea id="hw-comment" placeholder="Комментарий (необязательно)" rows="2"></textarea>
+          <button type="submit" class="btn btn-primary">📤 Отправить</button>
+        </form>
+      </div>
+    ` : ''}
+    ${mySubmission && mySubmission.status === 'rejected' ? `
+      <div class="detail-section rejection-info">
+        <h3>❌ Причина отклонения</h3>
+        <p>${mySubmission.rejectReason || 'Не указана'}</p>
       </div>
     ` : ''}
     <div class="detail-section">
@@ -413,6 +458,78 @@ function showHWDetail(id) {
   `;
   
   document.getElementById('detail-modal').classList.add('active');
+  
+  // Обработчики формы отправки
+  const form = document.getElementById('submit-hw-form');
+  const mediaInput = document.getElementById('hw-media');
+  
+  if (mediaInput) {
+    mediaInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      const preview = document.getElementById('media-preview');
+      preview.innerHTML = '';
+      
+      if (files.length > 0) {
+        document.getElementById('media-preview-text').textContent = `✅ Выбрано: ${files.length} файл(ов)`;
+        
+        files.forEach((file, idx) => {
+          const isVideo = file.type.startsWith('video/');
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (isVideo) {
+              preview.innerHTML += `<div class="preview-item video"><video src="${ev.target.result}" controls></video><span class="remove-media" data-idx="${idx}">✕</span></div>`;
+            } else {
+              preview.innerHTML += `<div class="preview-item"><img src="${ev.target.result}" alt="preview"><span class="remove-media" data-idx="${idx}">✕</span></div>`;
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    });
+  }
+  
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hwId = form.dataset.hwId;
+      const hwTitle = form.dataset.hwTitle;
+      const comment = document.getElementById('hw-comment')?.value || '';
+      const files = mediaInput?.files ? Array.from(mediaInput.files) : [];
+      
+      // Конвертируем все файлы в base64
+      const mediaData = [];
+      for (const file of files) {
+        const data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve({
+            data: ev.target.result,
+            type: file.type.startsWith('video/') ? 'video' : 'image',
+            name: file.name
+          });
+          reader.readAsDataURL(file);
+        });
+        mediaData.push(data);
+      }
+      
+      const result = await api.post('/api/submissions', {
+        hwId,
+        hwTitle,
+        tgId: currentUser.tgId,
+        userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim(),
+        media: mediaData,
+        comment
+      });
+      
+      if (result.success) {
+        submissions = await api.get('/api/submissions');
+        closeDetailModal();
+        showToast('Отправлено на проверку! ✅');
+        renderPage('topics');
+      } else {
+        showToast('Ошибка отправки');
+      }
+    });
+  }
 }
 
 function closeDetailModal() {
@@ -551,6 +668,7 @@ async function openAdmin() {
   allUsers = await api.get('/api/users');
   topics = await api.get('/api/topics');
   homework = await api.get('/api/homework');
+  submissions = await api.get('/api/submissions');
   settings = await api.get('/api/settings');
   
   document.getElementById('admin-panel').classList.add('active');
@@ -573,6 +691,7 @@ function renderAdmin() {
       <button class="admin-tab ${adminTab === 'users' ? 'active' : ''}" data-tab="users">👥 Люди</button>
       <button class="admin-tab ${adminTab === 'topics' ? 'active' : ''}" data-tab="topics">📚 Темы</button>
       <button class="admin-tab ${adminTab === 'homework' ? 'active' : ''}" data-tab="homework">📝 ДЗ</button>
+      <button class="admin-tab ${adminTab === 'submissions' ? 'active' : ''}" data-tab="submissions">📥 Заявки</button>
       <button class="admin-tab ${adminTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️</button>
     </div>
     <div class="admin-content" id="admin-content">${renderAdminContent()}</div>
@@ -585,6 +704,7 @@ function renderAdminContent() {
     case 'users': return renderUsers();
     case 'topics': return renderAdminTopics();
     case 'homework': return renderAdminHW();
+    case 'submissions': return renderSubmissions();
     case 'settings': return renderAdminSettings();
   }
 }
@@ -599,6 +719,7 @@ function setupAdminEvents() {
     case 'users': setupUserEvents(); break;
     case 'topics': setupTopicEvents(); break;
     case 'homework': setupHWEvents(); break;
+    case 'submissions': setupSubmissionEvents(); break;
     case 'settings': setupAdminSettingsEvents(); break;
   }
 }
@@ -749,19 +870,36 @@ function setupTopicEvents() {
 let currentHWId = null;
 
 function renderAdminHW() {
-  return `
-    <button class="btn btn-primary" id="add-hw-btn" style="margin-bottom:16px">+ Добавить ДЗ</button>
-    ${(homework || []).map(h => `
-      <div class="homework-card">
-        <h4>${h.title} ${h.isHidden ? '👁️‍🗨️' : ''}</h4>
+  const now = new Date();
+  const currentHW = (homework || []).filter(h => new Date(h.dueDate) >= now);
+  const pastHW = (homework || []).filter(h => new Date(h.dueDate) < now);
+  
+  const renderHWCard = (h) => {
+    const isPast = new Date(h.dueDate) < now;
+    return `
+      <div class="homework-card ${isPast ? 'past-hw' : ''}">
+        <h4>${h.title} ${h.isHidden ? '👁️‍🗨️' : ''} ${isPast ? '⏰' : ''}</h4>
         <div class="date">📅 ${h.dueDate} | ✅ ${(h.completedBy || []).length}</div>
         <div class="action-grid" style="margin-top:10px">
           <button class="action-btn edit" data-hid="${h.id}" data-hact="mark">Отметить</button>
+          ${!isPast ? `<button class="action-btn edit" data-hid="${h.id}" data-hact="past" style="background:#e17055">⏰ Прошло</button>` : ''}
           <button class="action-btn ${h.isHidden ? 'add' : 'remove'}" data-hid="${h.id}" data-hact="hide">${h.isHidden ? 'Показать' : 'Скрыть'}</button>
           <button class="action-btn remove" data-hid="${h.id}" data-hact="del">Удалить</button>
         </div>
       </div>
-    `).join('') || '<div class="empty-state"><p>Нет ДЗ</p></div>'}
+    `;
+  };
+  
+  return `
+    <button class="btn btn-primary" id="add-hw-btn" style="margin-bottom:16px">+ Добавить ДЗ</button>
+    
+    ${currentHW.length ? `<div class="hw-section-title">📝 Текущие (${currentHW.length})</div>` : ''}
+    ${currentHW.map(renderHWCard).join('')}
+    
+    ${pastHW.length ? `<div class="hw-section-title" style="margin-top:20px">⏰ Прошедшие (${pastHW.length})</div>` : ''}
+    ${pastHW.map(renderHWCard).join('')}
+    
+    ${!homework?.length ? '<div class="empty-state"><p>Нет ДЗ</p></div>' : ''}
     <div class="modal" id="hw-modal">
       <div class="modal-content">
         <h3>📝 Новое ДЗ</h3>
@@ -820,6 +958,13 @@ function setupHWEvents() {
       const h = homework.find(x => x.id === id);
       if (btn.dataset.hact === 'mark') { currentHWId = id; showMarkModal(); return; }
       if (btn.dataset.hact === 'hide') await api.put(`/api/homework/${id}`, { isHidden: !h.isHidden });
+      else if (btn.dataset.hact === 'past') {
+        // Устанавливаем дату на вчера чтобы сделать ДЗ прошедшим
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        await api.put(`/api/homework/${id}`, { dueDate: yesterday.toISOString().split('T')[0] });
+        showToast('ДЗ перемещено в прошедшие');
+      }
       else if (btn.dataset.hact === 'del') { if (!confirm('Удалить?')) return; await api.delete(`/api/homework/${id}`); }
       homework = await api.get('/api/homework');
       document.getElementById('admin-content').innerHTML = renderAdminHW();
@@ -856,6 +1001,186 @@ function showMarkModal() {
   });
   
   document.getElementById('mark-modal').classList.add('active');
+}
+
+// Заявки на проверку ДЗ
+function renderSubmissions() {
+  const pending = (submissions || []).filter(s => s.status === 'pending');
+  const processed = (submissions || []).filter(s => s.status !== 'pending');
+  
+  return `
+    <div class="submissions-tabs">
+      <button class="sub-tab active" data-sub="pending">⏳ Ожидают (${pending.length})</button>
+      <button class="sub-tab" data-sub="processed">✅ Обработанные</button>
+    </div>
+    <div id="pending-subs" class="sub-content active">
+      ${pending.length ? pending.map(s => renderSubmissionCard(s)).join('') : '<div class="empty-state"><div class="icon">📭</div><p>Нет заявок</p></div>'}
+    </div>
+    <div id="processed-subs" class="sub-content">
+      ${processed.length ? processed.map(s => renderSubmissionCard(s, true)).join('') : '<div class="empty-state"><div class="icon">📭</div><p>Нет обработанных</p></div>'}
+    </div>
+    
+    <!-- Модалка просмотра заявки -->
+    <div class="modal" id="view-sub-modal">
+      <div class="modal-content" style="max-width:400px">
+        <h3>📋 Заявка на проверку</h3>
+        <div id="sub-detail"></div>
+      </div>
+    </div>
+    
+    <!-- Модалка отклонения -->
+    <div class="modal" id="reject-modal">
+      <div class="modal-content">
+        <h3>❌ Отклонить заявку</h3>
+        <form id="reject-form">
+          <textarea id="reject-reason" placeholder="Причина отклонения" rows="3" required></textarea>
+          <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary" id="close-reject">Отмена</button>
+            <button type="submit" class="btn btn-primary" style="background:var(--danger)">Отклонить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderSubmissionCard(s, isProcessed = false) {
+  const statusIcon = s.status === 'approved' ? '✅' : s.status === 'rejected' ? '❌' : '⏳';
+  const date = new Date(s.submittedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const mediaCount = s.media?.length || (s.photo ? 1 : 0);
+  const hasVideo = s.media?.some(m => m.type === 'video');
+  
+  return `
+    <div class="submission-card ${s.status}" data-sub-id="${s.id}">
+      <div class="sub-header">
+        <div class="sub-user">
+          <strong>${s.userName || 'Без имени'}</strong>
+          <span class="sub-date">${date}</span>
+        </div>
+        <span class="sub-status">${statusIcon}</span>
+      </div>
+      <div class="sub-hw">📝 ${s.hwTitle || 'ДЗ'}</div>
+      ${mediaCount > 0 ? `<div class="sub-has-photo">${hasVideo ? '🎬' : '📷'} ${mediaCount} файл(ов)</div>` : ''}
+      ${s.comment ? `<div class="sub-comment">"${s.comment.substring(0, 50)}${s.comment.length > 50 ? '...' : ''}"</div>` : ''}
+      ${!isProcessed ? `
+        <div class="sub-actions">
+          <button class="action-btn add" data-sub-act="approve" data-sid="${s.id}">✅ Принять</button>
+          <button class="action-btn remove" data-sub-act="reject" data-sid="${s.id}">❌ Отклонить</button>
+          <button class="action-btn edit" data-sub-act="view" data-sid="${s.id}">👁️</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+let currentSubId = null;
+
+function setupSubmissionEvents() {
+  // Табы
+  document.querySelectorAll('.sub-tab').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(btn.dataset.sub === 'pending' ? 'pending-subs' : 'processed-subs')?.classList.add('active');
+    };
+  });
+  
+  // Действия с заявками
+  document.querySelectorAll('[data-sub-act]').forEach(btn => {
+    btn.onclick = async () => {
+      const sid = btn.dataset.sid;
+      const sub = submissions.find(s => s.id === sid);
+      if (!sub) return;
+      
+      if (btn.dataset.subAct === 'view') {
+        showSubmissionDetail(sub);
+      } else if (btn.dataset.subAct === 'approve') {
+        await approveSubmission(sub);
+      } else if (btn.dataset.subAct === 'reject') {
+        currentSubId = sid;
+        document.getElementById('reject-modal').classList.add('active');
+      }
+    };
+  });
+  
+  // Закрыть модалку отклонения
+  document.getElementById('close-reject')?.addEventListener('click', () => {
+    document.getElementById('reject-modal').classList.remove('active');
+  });
+  
+  // Форма отклонения
+  document.getElementById('reject-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const reason = document.getElementById('reject-reason').value;
+    await rejectSubmission(currentSubId, reason);
+    document.getElementById('reject-modal').classList.remove('active');
+  });
+}
+
+function showSubmissionDetail(sub) {
+  const detail = document.getElementById('sub-detail');
+  const date = new Date(sub.submittedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  
+  // Поддержка старого формата (photo) и нового (media)
+  let mediaHtml = '';
+  if (sub.media && sub.media.length > 0) {
+    mediaHtml = `<div class="sub-media-gallery">${sub.media.map(m => {
+      if (m.type === 'video') {
+        return `<div class="gallery-item video"><video src="${m.data}" controls></video></div>`;
+      }
+      return `<div class="gallery-item"><img src="${m.data}" alt="Фото"></div>`;
+    }).join('')}</div>`;
+  } else if (sub.photo) {
+    mediaHtml = `<div class="sub-photo-full"><img src="${sub.photo}" alt="Фото работы"></div>`;
+  } else {
+    mediaHtml = '<p style="color:var(--text-light);text-align:center">Файлы не прикреплены</p>';
+  }
+  
+  detail.innerHTML = `
+    <div class="sub-detail-info">
+      <p><strong>👤 От:</strong> ${sub.userName}</p>
+      <p><strong>📝 ДЗ:</strong> ${sub.hwTitle}</p>
+      <p><strong>📅 Дата:</strong> ${date}</p>
+      ${sub.comment ? `<p><strong>💬 Комментарий:</strong> ${sub.comment}</p>` : ''}
+    </div>
+    ${mediaHtml}
+    <div class="modal-buttons" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="document.getElementById('view-sub-modal').classList.remove('active')">Закрыть</button>
+    </div>
+  `;
+  
+  document.getElementById('view-sub-modal').classList.add('active');
+}
+
+async function approveSubmission(sub) {
+  // Обновляем статус заявки
+  await api.put(`/api/submissions/${sub.id}`, { status: 'approved' });
+  
+  // Отмечаем ДЗ как выполненное
+  const hw = homework.find(h => h.id === sub.hwId);
+  if (hw) {
+    const completedBy = [...(hw.completedBy || [])];
+    if (!completedBy.includes(sub.tgId)) {
+      completedBy.push(sub.tgId);
+      await api.put(`/api/homework/${sub.hwId}`, { completedBy });
+    }
+  }
+  
+  // Обновляем данные
+  submissions = await api.get('/api/submissions');
+  homework = await api.get('/api/homework');
+  document.getElementById('admin-content').innerHTML = renderSubmissions();
+  setupSubmissionEvents();
+  showToast('Заявка принята ✅');
+}
+
+async function rejectSubmission(subId, reason) {
+  await api.put(`/api/submissions/${subId}`, { status: 'rejected', rejectReason: reason });
+  submissions = await api.get('/api/submissions');
+  document.getElementById('admin-content').innerHTML = renderSubmissions();
+  setupSubmissionEvents();
+  showToast('Заявка отклонена');
 }
 
 // Настройки админа

@@ -3356,78 +3356,85 @@ button, input, textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
 }
 
 .pet-avatar-wrapper .pet-avatar {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 /* Базовые стили для одежды */
 .outfit-item {
   position: absolute;
   pointer-events: none;
-  z-index: 10;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
   line-height: 1;
+  text-align: center;
 }
 
-/* Шапка - сверху */
+/* Шапка - на голове сверху */
 .outfit-item.outfit-hat {
-  top: 5px;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 36px;
+  z-index: 10;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+  animation: hatFloat 3s ease-in-out infinite;
+}
+
+@keyframes hatFloat {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-5px); }
+}
+
+/* Аксессуар - на лице/глазах */
+.outfit-item.outfit-accessory {
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 30px;
+  z-index: 15;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  animation: accessoryShine 2.5s ease-in-out infinite;
+}
+
+@keyframes accessoryShine {
+  0%, 100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)) brightness(1); }
+  50% { filter: drop-shadow(0 2px 8px rgba(255,255,255,0.3)) brightness(1.1); }
+}
+
+/* Шарф - на шее снизу питомца */
+.outfit-item.outfit-scarf {
+  bottom: 25px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 32px;
-  animation: hatBounce 3s ease-in-out infinite;
+  z-index: 5;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  animation: scarfSway 4s ease-in-out infinite;
 }
 
-@keyframes hatBounce {
-  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); }
-  50% { transform: translateX(-50%) translateY(-4px) rotate(2deg); }
+@keyframes scarfSway {
+  0%, 100% { transform: translateX(-50%) rotate(-3deg); }
+  50% { transform: translateX(-50%) rotate(3deg); }
 }
 
-/* Аксессуар - справа */
-.outfit-item.outfit-accessory {
-  top: 50%;
-  right: 5px;
-  transform: translateY(-50%);
-  font-size: 24px;
-  animation: accessoryPulse 2s ease-in-out infinite;
-}
-
-@keyframes accessoryPulse {
-  0%, 100% { transform: translateY(-50%) scale(1); }
-  50% { transform: translateY(-50%) scale(1.1); }
-}
-
-/* Шарф - слева */
-.outfit-item.outfit-scarf {
-  top: 50%;
-  left: 5px;
-  transform: translateY(-50%);
-  font-size: 28px;
-  animation: scarfWave 4s ease-in-out infinite;
-}
-
-@keyframes scarfWave {
-  0%, 100% { transform: translateY(-50%) rotate(-5deg); }
-  50% { transform: translateY(-50%) rotate(5deg); }
-}
-
-/* Обувь - снизу */
+/* Обувь - внизу под питомцем */
 .outfit-item.outfit-shoes {
-  bottom: 5px;
+  bottom: -5px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 22px;
-  animation: shoesWalk 1.5s ease-in-out infinite;
+  font-size: 26px;
+  z-index: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+  animation: shoesStep 1s ease-in-out infinite;
 }
 
-@keyframes shoesWalk {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-3px); }
+@keyframes shoesStep {
+  0%, 100% { transform: translateX(-50%) scaleY(1); }
+  50% { transform: translateX(-50%) scaleY(0.95); }
 }
 
 

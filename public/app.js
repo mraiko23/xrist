@@ -1,3449 +1,2185 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --bg-solid: #6c5ce7;
-  --card: rgba(255,255,255,0.95);
-  --card-dark: rgba(30,30,50,0.95);
-  --text: #2d3436;
-  --text-light: #636e72;
-  --primary: #6c5ce7;
-  --primary-light: #a29bfe;
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --danger: #e74c3c;
-  --gold: linear-gradient(135deg, #f5af19, #f12711);
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--bg);
-  min-height: 100vh;
-  color: var(--text);
-  overflow-x: hidden;
-}
-
-/* Анимированный фон */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
-    radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 0%, transparent 30%);
-  animation: bgFloat 20s ease-in-out infinite;
-  pointer-events: none;
-  z-index: -1;
-}
-
-@keyframes bgFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-20px) scale(1.02); }
-}
-
-body.dark {
-  --card: rgba(30,30,50,0.95);
-  --text: #ffffff;
-  --text-light: #a0a0a0;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-}
-
-/* ===== ЭКРАНЫ ===== */
-.screen {
-  display: none;
-  min-height: 100vh;
-  padding: 16px;
-  padding-bottom: 100px;
-}
-
-.screen.active { 
-  display: block; 
-  animation: screenIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes screenIn {
-  from { opacity: 0; transform: translateY(30px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Загрузка */
-#loading-screen, #error-screen {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: white;
-}
-
-#loading-screen.active, #error-screen.active { display: flex; }
-
-.loader {
-  width: 60px;
-  height: 60px;
-  border: 4px solid rgba(255,255,255,0.2);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite, loaderPulse 2s ease-in-out infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes loaderPulse {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.1); }
-}
-
-.error-icon { 
-  font-size: 80px; 
-  margin-bottom: 20px; 
-  animation: shake 0.5s ease-in-out;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-10px); }
-  75% { transform: translateX(10px); }
-}
-
-#error-screen h2 { color: white; margin-bottom: 10px; font-size: 24px; }
-#error-screen p { color: rgba(255,255,255,0.8); }
-
-/* ===== КАРТОЧКИ ===== */
-.card {
-  background: var(--card);
-  border-radius: 24px;
-  padding: 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-  backdrop-filter: blur(20px);
-  animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-}
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(40px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ===== ФОРМЫ ===== */
-.form-card {
-  background: var(--card);
-  border-radius: 28px;
-  padding: 36px 28px;
-  max-width: 400px;
-  margin: 30px auto;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.25);
-  animation: formFloat 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.form-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(from 0deg, transparent, rgba(108,92,231,0.1), transparent 30%);
-  animation: formGlow 4s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.form-card form,
-.form-card h2,
-.form-card > p,
-.form-card input,
-.form-card textarea,
-.form-card button,
-.form-card label {
-  position: relative;
-  z-index: 1;
-}
-
-@keyframes formGlow {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes formFloat {
-  from { opacity: 0; transform: translateY(60px) scale(0.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.form-card h2 {
-  text-align: center;
-  margin-bottom: 8px;
-  font-size: 28px;
-  background: var(--gold);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  position: relative;
-  animation: titleShine 3s ease-in-out infinite;
-}
-
-@keyframes titleShine {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.2); }
-}
-
-.form-card > p {
-  text-align: center;
-  color: var(--text-light);
-  margin-bottom: 28px;
-  font-size: 14px;
-  position: relative;
-}
-
-/* ===== ИНПУТЫ ===== */
-input, textarea {
-  width: 100%;
-  padding: 16px 20px;
-  border: 2px solid #e0e0e0;
-  border-radius: 16px;
-  font-size: 16px;
-  line-height: 1.4;
-  margin-bottom: 14px;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  background: #ffffff !important;
-  color: #2d3436 !important;
-  font-family: inherit;
-  -webkit-text-fill-color: #2d3436 !important;
-  opacity: 1 !important;
-  -webkit-appearance: none;
-  appearance: none;
-  min-height: 52px;
-  box-sizing: border-box;
-}
-
-input:focus, textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(108,92,231,0.15);
-  background: #ffffff;
-}
-
-input::placeholder, textarea::placeholder {
-  color: #999;
-  -webkit-text-fill-color: #999;
-  opacity: 1;
-}
-
-body.dark input, body.dark textarea {
-  background: rgba(255,255,255,0.15) !important;
-  border-color: rgba(255,255,255,0.3);
-  color: #ffffff !important;
-  -webkit-text-fill-color: #ffffff !important;
-}
-
-body.dark input:focus, body.dark textarea:focus {
-  background: rgba(255,255,255,0.15);
-  border-color: var(--primary-light);
-}
-
-body.dark input::placeholder, body.dark textarea::placeholder {
-  color: rgba(255,255,255,0.5);
-  -webkit-text-fill-color: rgba(255,255,255,0.5);
-}
-
-.date-row {
-  display: flex;
-  gap: 12px;
-}
-
-.date-row input {
-  flex: 1;
-  text-align: center;
-  min-width: 0;
-  padding: 16px 8px;
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
-/* Убираем стрелки у number инпутов */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-input[type="number"] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-
-label {
-  display: block;
-  font-size: 13px;
-  color: var(--text-light);
-  margin-bottom: 8px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-
-/* ===== КНОПКИ ===== */
-.btn {
-  width: 100%;
-  padding: 18px;
-  border: none;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-  font-family: inherit;
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  transition: left 0.5s;
-}
-
-.btn:hover::before {
-  left: 100%;
-}
-
-.btn-primary {
-  background: var(--gold);
-  color: white;
-  box-shadow: 0 10px 30px rgba(241,39,17,0.35);
-}
-
-.btn-primary:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 15px 40px rgba(241,39,17,0.45);
-}
-
-.btn-primary:active { 
-  transform: scale(0.97); 
-  box-shadow: 0 5px 20px rgba(241,39,17,0.3);
-}
-
-.btn-secondary {
-  background: #f1f2f6;
-  color: var(--text);
-}
-
-.btn-secondary:hover {
-  background: #e4e6eb;
-  transform: translateY(-2px);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-/* ===== НАВИГАЦИЯ ===== */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  background: var(--card);
-  padding: 10px 20px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
-  box-shadow: 0 -10px 50px rgba(0,0,0,0.12);
-  border-radius: 28px 28px 0 0;
-  z-index: 100;
-  backdrop-filter: blur(20px);
-}
-
-.nav-btn {
-  flex: 1;
-  padding: 14px 8px;
-  background: none;
-  border: none;
-  font-size: 26px;
-  cursor: pointer;
-  opacity: 0.4;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border-radius: 18px;
-  position: relative;
-}
-
-.nav-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  width: 0;
-  height: 4px;
-  background: var(--primary);
-  border-radius: 2px;
-  transform: translateX(-50%);
-  transition: width 0.3s;
-}
-
-.nav-btn.active {
-  opacity: 1;
-  background: rgba(108,92,231,0.12);
-  transform: scale(1.1) translateY(-4px);
-}
-
-.nav-btn.active::after {
-  width: 20px;
-}
-
-/* ===== ДОРОЖКА ПРОГРЕССА ===== */
-.progress-page { text-align: center; }
-
-.progress-header {
-  color: white;
-  margin-bottom: 24px;
-  animation: headerFloat 0.8s ease-out;
-}
-
-@keyframes headerFloat {
-  from { opacity: 0; transform: translateY(-30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.progress-header h2 {
-  font-size: 32px;
-  margin-bottom: 12px;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  animation: titlePulse 3s ease-in-out infinite;
-}
-
-@keyframes titlePulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-.progress-counter {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255,255,255,0.2);
-  padding: 14px 28px;
-  border-radius: 40px;
-  backdrop-filter: blur(15px);
-  animation: counterPop 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
-  border: 1px solid rgba(255,255,255,0.3);
-}
-
-@keyframes counterPop {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.progress-counter .num {
-  font-size: 36px;
-  font-weight: 800;
-  animation: numBounce 2s ease-in-out infinite;
-}
-
-@keyframes numBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-
-/* Контейнер дорожки */
-.road-container {
-  background: var(--card);
-  border-radius: 28px;
-  padding: 28px 20px;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.18);
-  max-height: 55vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  animation: roadIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-  scroll-behavior: smooth;
-}
-
-@keyframes roadIn {
-  from { opacity: 0; transform: translateY(50px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.road-container::-webkit-scrollbar { width: 6px; }
-.road-container::-webkit-scrollbar-thumb { 
-  background: linear-gradient(var(--primary-light), var(--primary)); 
-  border-radius: 6px; 
-}
-
-.road {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  padding: 10px 0;
-}
-
-.road::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  background: linear-gradient(to bottom, var(--primary-light), var(--primary), var(--primary-light));
-  transform: translateX(-50%);
-  border-radius: 6px;
-  animation: roadLine 2s ease-in-out infinite;
-}
-
-@keyframes roadLine {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
-}
-
-.road-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 10px 0;
-  position: relative;
-  z-index: 1;
-  animation: roadItemIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.road-item:nth-child(odd) { flex-direction: row; }
-.road-item:nth-child(even) { flex-direction: row-reverse; }
-.road-item:nth-child(odd) .step-info { text-align: left; padding-left: 24px; }
-.road-item:nth-child(even) .step-info { text-align: right; padding-right: 24px; }
-
-@keyframes roadItemIn {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.step-circle {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  font-weight: 800;
-  background: linear-gradient(145deg, #f5f5f5, #e0e0e0);
-  color: #b2bec3;
-  border: 4px solid white;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  flex-shrink: 0;
-}
-
-.step-circle.done {
-  background: linear-gradient(135deg, #00b894, #00cec9);
-  color: white;
-  animation: stepDone 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 8px 30px rgba(0,184,148,0.4);
-}
-
-.step-circle.done::after {
-  content: '✓';
-  font-size: 26px;
-  animation: checkPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes stepDone {
-  0% { transform: scale(0) rotate(-180deg); }
-  50% { transform: scale(1.3) rotate(10deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-
-@keyframes checkPop {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
-}
-
-.step-circle.current {
-  background: white;
-  border: 4px solid var(--primary);
-  color: var(--primary);
-  animation: currentPulse 2s ease-in-out infinite;
-  box-shadow: 0 0 0 12px rgba(108,92,231,0.2), 0 8px 30px rgba(108,92,231,0.3);
-}
-
-@keyframes currentPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 12px rgba(108,92,231,0.2), 0 8px 30px rgba(108,92,231,0.3); }
-  50% { transform: scale(1.08); box-shadow: 0 0 0 18px rgba(108,92,231,0.1), 0 12px 40px rgba(108,92,231,0.4); }
-}
-
-.step-circle.gift {
-  background: var(--gold);
-  color: white;
-  font-size: 26px;
-  animation: giftGlow 2s ease-in-out infinite;
-  box-shadow: 0 8px 30px rgba(245,175,25,0.5);
-}
-
-@keyframes giftGlow {
-  0%, 100% { box-shadow: 0 8px 30px rgba(245,175,25,0.5), 0 0 0 0 rgba(245,175,25,0.3); }
-  50% { box-shadow: 0 12px 40px rgba(245,175,25,0.7), 0 0 0 15px rgba(245,175,25,0.1); }
-}
-
-.step-circle.gift.done {
-  background: linear-gradient(135deg, #fdcb6e, #e17055);
-}
-
-.step-circle.gift.done::after { content: '🎁'; font-size: 30px; }
-
-.step-info { flex: 1; min-width: 0; }
-.step-num { font-size: 12px; color: var(--text-light); font-weight: 500; }
-.step-label { font-size: 14px; font-weight: 700; color: var(--text); }
-
-.gift-label {
-  background: var(--gold);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 800;
-}
-
-/* Алерт подарка */
-.gift-alert {
-  background: var(--gold);
-  color: white;
-  padding: 24px;
-  border-radius: 24px;
-  margin-top: 24px;
-  text-align: center;
-  animation: giftAlertBounce 1s ease-in-out infinite, giftAlertIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 15px 50px rgba(241,39,17,0.4);
-  position: relative;
-  overflow: hidden;
-}
-
-.gift-alert::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
-  animation: giftShine 3s linear infinite;
-}
-
-@keyframes giftShine {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes giftAlertBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes giftAlertIn {
-  from { opacity: 0; transform: scale(0.8) translateY(30px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.gift-alert .emoji { 
-  font-size: 50px; 
-  display: block; 
-  margin-bottom: 12px; 
-  animation: emojiWiggle 1s ease-in-out infinite;
-  position: relative;
-}
-
-@keyframes emojiWiggle {
-  0%, 100% { transform: rotate(-5deg); }
-  50% { transform: rotate(5deg); }
-}
-
-.gift-alert p { font-size: 14px; opacity: 0.95; position: relative; }
-.gift-alert strong { font-size: 18px; position: relative; }
-
-/* Маленький алерт подарка */
-.gift-alert-small {
-  background: var(--gold);
-  color: white;
-  padding: 14px 20px;
-  border-radius: 16px;
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 15px;
-  box-shadow: 0 8px 25px rgba(241,39,17,0.3);
-  animation: giftSmallPulse 2s ease-in-out infinite;
-}
-
-@keyframes giftSmallPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-/* Полноэкранный модал поздравления с подарком */
-.gift-celebration-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 9999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  backdrop-filter: blur(10px);
-}
-
-.gift-celebration-modal.active {
-  display: flex;
-  animation: giftModalBgIn 0.5s ease-out;
-}
-
-@keyframes giftModalBgIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.gift-celebration-content {
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
-  border-radius: 32px;
-  padding: 40px 30px;
-  text-align: center;
-  max-width: 340px;
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-  animation: giftContentIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.4);
-}
-
-@keyframes giftContentIn {
-  from { 
-    opacity: 0; 
-    transform: scale(0.5) translateY(50px); 
+// Telegram Web App
+const tg = window.Telegram?.WebApp;
+
+// Состояние
+let currentUser = null;
+let allUsers = [];
+let topics = [];
+let homework = [];
+let submissions = [];
+let settings = { adminUsername: '@admin', giftThreshold: 5 };
+let tgUser = null;
+
+// API
+const api = {
+  async get(url) { 
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        return { error: `HTTP ${res.status}` };
+      }
+      return res.json();
+    } catch (e) {
+      console.error('API GET error:', e);
+      return { error: e.message };
+    }
+  },
+  async post(url, data) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API POST failed:', res.status, text);
+        return { error: `Ошибка сервера (${res.status})` };
+      }
+      return res.json();
+    } catch (e) {
+      console.error('API POST error:', e);
+      return { error: e.message };
+    }
+  },
+  async put(url, data) {
+    try {
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        return { error: `HTTP ${res.status}` };
+      }
+      return res.json();
+    } catch (e) {
+      console.error('API PUT error:', e);
+      return { error: e.message };
+    }
+  },
+  async delete(url) { 
+    try {
+      const res = await fetch(url, { method: 'DELETE' });
+      return res.json();
+    } catch (e) {
+      console.error('API DELETE error:', e);
+      return { error: e.message };
+    }
   }
-  to { 
-    opacity: 1; 
-    transform: scale(1) translateY(0); 
+};
+
+// Инициализация
+async function init() {
+  // СТРОГАЯ проверка Telegram
+  if (!tg?.initDataUnsafe?.user?.id) {
+    showScreen('error-screen');
+    return;
+  }
+
+  tgUser = tg.initDataUnsafe.user;
+  tg.ready();
+  tg.expand();
+  
+  // Устанавливаем цвет хедера
+  tg.setHeaderColor('#667eea');
+  tg.setBackgroundColor('#667eea');
+  
+  try {
+    [settings, topics, homework, submissions] = await Promise.all([
+      api.get('/api/settings').catch(() => ({ adminUsername: '@admin', giftThreshold: 5 })),
+      api.get('/api/topics').catch(() => []),
+      api.get('/api/homework').catch(() => []),
+      api.get('/api/submissions').catch(() => [])
+    ]);
+
+    const userData = await api.get(`/api/user/${tgUser.id}`);
+    
+    if (!userData || userData.error || !userData.tgId) {
+      showScreen('register-screen');
+      setupRegistration();
+    } else {
+      currentUser = userData;
+      if (currentUser.isBlocked) {
+        document.querySelector('#error-screen p').textContent = 'Ваш аккаунт заблокирован';
+        showScreen('error-screen');
+        return;
+      }
+      if (currentUser.theme === 'dark') document.body.classList.add('dark');
+      showScreen('main-screen');
+      setupNav();
+      renderPage('progress');
+    }
+  } catch (e) {
+    console.error(e);
+    showScreen('register-screen');
+    setupRegistration();
   }
 }
 
-.gift-celebration-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 6px;
-  background: var(--gold);
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
 }
 
-.gift-confetti {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  overflow: hidden;
+function showToast(msg) {
+  let t = document.querySelector('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-.gift-confetti span {
-  position: absolute;
-  font-size: 24px;
-  animation: confettiFall 3s ease-in-out infinite;
+// Регистрация
+function setupRegistration() {
+  const form = document.getElementById('register-form');
+  if (tgUser?.first_name) document.getElementById('reg-firstname').value = tgUser.first_name;
+  if (tgUser?.last_name) document.getElementById('reg-lastname').value = tgUser.last_name || '';
+  
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const d = document.getElementById('reg-day').value;
+    const m = document.getElementById('reg-month').value;
+    const y = document.getElementById('reg-year').value;
+    if (!d || !m || !y) { showToast('Заполните дату рождения'); return; }
+    
+    const result = await api.post('/api/register', {
+      tgId: String(tgUser.id),
+      username: tgUser.username || '',
+      firstName: document.getElementById('reg-firstname').value,
+      lastName: document.getElementById('reg-lastname').value,
+      birthDate: `${d}.${m}.${y}`,
+      photo: tgUser.photo_url || ''
+    });
+    
+    if (result.error) {
+      showToast(result.error);
+      return;
+    }
+    if (result.success) {
+      currentUser = await api.get(`/api/user/${tgUser.id}`);
+      showScreen('main-screen');
+      setupNav();
+      renderPage('progress');
+      showToast('Добро пожаловать! 🎉');
+    } else {
+      showToast(result.message || 'Ошибка регистрации');
+    }
+  };
 }
 
-.gift-confetti span:nth-child(1) { left: 10%; animation-delay: 0s; }
-.gift-confetti span:nth-child(2) { left: 30%; animation-delay: 0.5s; }
-.gift-confetti span:nth-child(3) { left: 50%; animation-delay: 0.2s; }
-.gift-confetti span:nth-child(4) { left: 70%; animation-delay: 0.7s; }
-.gift-confetti span:nth-child(5) { left: 90%; animation-delay: 0.3s; }
+// Навигация
+function setupNav() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderPage(btn.dataset.page);
+    };
+  });
+}
 
-@keyframes confettiFall {
-  0% { 
-    top: -10%; 
-    opacity: 1;
-    transform: rotate(0deg) scale(1);
+function renderPage(page) {
+  const c = document.getElementById('page-content');
+  switch(page) {
+    case 'progress': c.innerHTML = renderProgress(); setupInfiniteRoad(); break;
+    case 'topics': c.innerHTML = renderTopics(); setupTabs(); break;
+    case 'pet': c.innerHTML = renderPet(); setupPetEvents(); break;
+    case 'diary': c.innerHTML = renderDiary(); break;
+    case 'settings': c.innerHTML = renderSettings(); setupSettingsEvents(); break;
   }
-  100% { 
-    top: 110%; 
-    opacity: 0;
-    transform: rotate(720deg) scale(0.5);
+}
+
+
+// === СТРАНИЦЫ ===
+
+let loadedSteps = 0;
+let isLoadingMore = false;
+
+function renderProgress() {
+  const stickers = currentUser?.stickers || 0;
+  const spentStickers = currentUser?.spentStickers || 0;
+  const earnedStickers = stickers + spentStickers; // Всего заработано
+  const claimedGifts = currentUser?.claimedGifts || 0; // Сколько подарков уже получено
+  const threshold = settings.giftThreshold || 5;
+  
+  // Сколько подарков заслужено (по заработанным наклейкам)
+  const deservedGifts = Math.floor(earnedStickers / threshold);
+  // Можно ли получить новый подарок
+  const canClaimGift = deservedGifts > claimedGifts;
+  
+  // Если lastAcknowledgedGift не установлен - инициализируем текущим значением
+  // чтобы не показывать модал для старых подарков
+  let lastAcknowledgedGift = currentUser?.lastAcknowledgedGift;
+  if ((lastAcknowledgedGift === undefined || lastAcknowledgedGift === null) && currentUser) {
+    // Первый раз - устанавливаем равным текущим заслуженным подаркам
+    lastAcknowledgedGift = deservedGifts;
+    currentUser.lastAcknowledgedGift = deservedGifts;
+    // Сохраняем в фоне
+    api.put(`/api/user/${currentUser.tgId}`, { lastAcknowledgedGift: deservedGifts });
+  }
+  
+  // Показать полноэкранный модал только если есть НОВЫЙ подарок
+  const showGiftModal = deservedGifts > lastAcknowledgedGift;
+  
+  // До следующего подарка считаем от заработанных
+  const toGift = threshold - (earnedStickers % threshold);
+  
+  // Начальное количество шагов (показываем по заработанным)
+  loadedSteps = Math.max(earnedStickers + 10, 20);
+
+  // Показываем модал после рендера только для новых подарков
+  if (showGiftModal) {
+    setTimeout(() => showGiftCelebrationModal(deservedGifts), 300);
+  }
+
+  return `
+    <div class="progress-page">
+      <div class="progress-header">
+        <h2>Моя дорожка</h2>
+        <div class="progress-counter">
+          <span>До подарка:</span>
+          <span class="num">${toGift === threshold && earnedStickers === 0 ? threshold : toGift}</span>
+          <span>🎁</span>
+        </div>
+        <div class="stickers-info">🌟 ${stickers} наклеек</div>
+      </div>
+      
+      <div class="road-container" id="road-container">
+        <div class="road" id="road">${generateRoadItems(1, loadedSteps, earnedStickers)}</div>
+        <div class="load-more" id="load-more">
+          <div class="load-spinner"></div>
+        </div>
+      </div>
+      
+
+    </div>
+    
+    <!-- Полноэкранный модал поздравления -->
+    <div class="gift-celebration-modal" id="gift-celebration-modal">
+      <div class="gift-celebration-content">
+        <div class="gift-confetti">
+          <span>🎊</span><span>✨</span><span>🎉</span><span>⭐</span><span>🎊</span>
+        </div>
+        <div class="gift-celebration-emoji">🎁</div>
+        <h2>🎉 Поздравляем! 🎉</h2>
+        <p class="gift-celebration-text">Подойди к <strong>${settings.adminUsername}</strong> за сладким подарком!</p>
+        <button class="btn btn-primary gift-celebration-btn" id="close-gift-modal">Ура! Понятно!</button>
+      </div>
+    </div>
+  `;
+}
+
+// Показать полноэкранный модал поздравления
+function showGiftCelebrationModal(giftNumber) {
+  const modal = document.getElementById('gift-celebration-modal');
+  if (modal) {
+    modal.classList.add('active');
+    
+    // Обработчик закрытия
+    const closeBtn = document.getElementById('close-gift-modal');
+    if (closeBtn) {
+      closeBtn.onclick = async () => {
+        modal.classList.remove('active');
+        // Сохраняем что пользователь видел этот подарок
+        await acknowledgeGift(giftNumber);
+      };
+    }
+    
+    // Закрытие по клику на фон
+    modal.onclick = async (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+        await acknowledgeGift(giftNumber);
+      }
+    };
   }
 }
 
-.gift-celebration-emoji {
-  font-size: 80px;
-  margin-bottom: 20px;
-  animation: giftEmojiPop 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both,
-             giftEmojiBounce 2s ease-in-out 1.1s infinite;
-  position: relative;
-  z-index: 1;
-}
-
-@keyframes giftEmojiPop {
-  from { 
-    transform: scale(0) rotate(-30deg); 
-    opacity: 0;
-  }
-  to { 
-    transform: scale(1) rotate(0deg); 
-    opacity: 1;
+// Подтвердить что пользователь видел подарок
+async function acknowledgeGift(giftNumber) {
+  try {
+    currentUser.lastAcknowledgedGift = giftNumber;
+    await api.put(`/api/user/${currentUser.tgId}`, { lastAcknowledgedGift: giftNumber });
+  } catch (e) {
+    console.error('Error acknowledging gift:', e);
   }
 }
 
-@keyframes giftEmojiBounce {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-15px) rotate(3deg); }
-}
-
-.gift-celebration-content h2 {
-  font-size: 26px;
-  margin-bottom: 16px;
-  background: var(--gold);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: giftTitleIn 0.6s ease-out 0.4s both;
-  position: relative;
-  z-index: 1;
-}
-
-@keyframes giftTitleIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.gift-celebration-text {
-  font-size: 16px;
-  color: var(--text);
-  line-height: 1.6;
-  margin-bottom: 28px;
-  animation: giftTextIn 0.6s ease-out 0.5s both;
-  position: relative;
-  z-index: 1;
-}
-
-.gift-celebration-text strong {
-  color: var(--primary);
-}
-
-@keyframes giftTextIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.gift-celebration-btn {
-  animation: giftBtnIn 0.6s ease-out 0.6s both;
-  position: relative;
-  z-index: 1;
-  font-size: 17px;
-  padding: 18px 32px;
-}
-
-@keyframes giftBtnIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* Загрузка дорожки */
-.load-more {
-  display: none;
-  justify-content: center;
-  padding: 24px;
-}
-
-.load-spinner {
-  width: 36px;
-  height: 36px;
-  border: 4px solid rgba(108,92,231,0.2);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-
-/* ===== ТЕМЫ И ДЗ ===== */
-.topics-page h2 {
-  color: white;
-  font-size: 28px;
-  margin-bottom: 20px;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  animation: headerFloat 0.6s ease-out;
-}
-
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 14px;
-  background: rgba(255,255,255,0.15);
-  border: none;
-  border-radius: 16px;
-  color: white;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-.tab-btn.active {
-  background: white;
-  color: var(--primary);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-}
-
-.tab-content { 
-  display: none; 
-}
-
-.tab-content.active { 
-  display: block; 
-  animation: tabIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes tabIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.topic-card, .homework-card {
-  background: var(--card);
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: cardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  position: relative;
-  overflow: hidden;
-}
-
-.topic-card::before, .homework-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--primary);
-  transform: scaleY(0);
-  transition: transform 0.3s;
-}
-
-.topic-card:hover::before, .homework-card:hover::before {
-  transform: scaleY(1);
-}
-
-@keyframes cardSlideIn {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.topic-card:hover, .homework-card:hover { 
-  transform: translateY(-6px) scale(1.01);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-}
-
-.topic-card h4, .homework-card h4 {
-  font-size: 16px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-}
-
-.topic-card .date, .homework-card .date {
-  font-size: 13px;
-  color: var(--text-light);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.topic-card p, .homework-card p {
-  font-size: 14px;
-  color: var(--text-light);
-  margin-top: 10px;
-  line-height: 1.6;
-}
-
-.homework-card.completed {
-  border-left: 5px solid var(--success);
-  background: linear-gradient(90deg, rgba(0,184,148,0.08), transparent);
-}
-
-.section-title {
-  color: white;
-  font-size: 20px;
-  margin: 28px 0 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: headerFloat 0.6s ease-out;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 50px 24px;
-  color: var(--text-light);
-  background: var(--card);
-  border-radius: 20px;
-  animation: emptyPulse 3s ease-in-out infinite;
-}
-
-@keyframes emptyPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.01); }
-}
-
-.empty-state .icon { 
-  font-size: 60px; 
-  margin-bottom: 16px; 
-  animation: emptyFloat 3s ease-in-out infinite;
-}
-
-@keyframes emptyFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.empty-state p { font-size: 15px; }
-
-/* Кликабельные карточки */
-.clickable {
-  cursor: pointer;
-}
-
-.clickable:active {
-  transform: scale(0.97) !important;
-}
-
-.tap-hint {
-  font-size: 12px;
-  color: var(--primary);
-  margin-top: 10px;
-  opacity: 0.8;
-  animation: tapHintPulse 2s ease-in-out infinite;
-}
-
-@keyframes tapHintPulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-.preview {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* ===== ПРОФИЛЬ ===== */
-.diary-page { text-align: center; }
-
-.profile-card {
-  background: var(--card);
-  border-radius: 28px;
-  padding: 36px 24px;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.18);
-  position: relative;
-  overflow: hidden;
-  animation: profileIn 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes profileIn {
-  from { opacity: 0; transform: translateY(50px) scale(0.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  background: var(--gold);
-  opacity: 0.15;
-  animation: profileGlow 4s ease-in-out infinite;
-}
-
-@keyframes profileGlow {
-  0%, 100% { opacity: 0.1; }
-  50% { opacity: 0.2; }
-}
-
-.profile-photo {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 5px solid white;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-  position: relative;
-  z-index: 1;
-  animation: photoFloat 4s ease-in-out infinite;
-}
-
-@keyframes photoFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-.profile-photo.placeholder {
-  background: linear-gradient(135deg, #dfe6e9, #b2bec3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  margin: 0 auto;
-}
-
-.profile-name {
-  font-size: 26px;
-  font-weight: 800;
-  margin: 20px 0 6px;
-  animation: nameIn 0.6s ease-out 0.2s both;
-}
-
-@keyframes nameIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.profile-username {
-  color: var(--primary);
-  font-size: 15px;
-  margin-bottom: 24px;
-  font-weight: 600;
-}
-
-.stats-row {
-  display: flex;
-  gap: 14px;
-  margin: 24px 0;
-}
-
-.stat-box {
-  flex: 1;
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  border-radius: 20px;
-  padding: 20px 14px;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: statIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.stat-box:nth-child(1) { animation-delay: 0.3s; }
-.stat-box:nth-child(2) { animation-delay: 0.4s; }
-
-@keyframes statIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.stat-box:hover { 
-  transform: scale(1.05) translateY(-4px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.1);
-}
-
-.stat-box .value {
-  font-size: 38px;
-  font-weight: 800;
-  animation: valueCount 1s ease-out;
-}
-
-@keyframes valueCount {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.stat-box .label {
-  font-size: 12px;
-  color: var(--text-light);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
-  margin-top: 4px;
-}
-
-.stat-box.stickers .value { color: var(--success); }
-.stat-box.absences .value { color: var(--danger); }
-
-.birthday-box {
-  background: linear-gradient(135deg, rgba(253,203,110,0.25), rgba(225,112,85,0.25));
-  border-radius: 20px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  animation: birthdayIn 0.6s ease-out 0.5s both;
-}
-
-@keyframes birthdayIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.birthday-box .emoji { 
-  font-size: 28px; 
-  animation: cakeWiggle 2s ease-in-out infinite;
-}
-
-@keyframes cakeWiggle {
-  0%, 100% { transform: rotate(-5deg); }
-  50% { transform: rotate(5deg); }
-}
-
-/* ===== НАСТРОЙКИ ===== */
-.settings-page h2 {
-  color: white;
-  font-size: 28px;
-  margin-bottom: 24px;
-  animation: headerFloat 0.6s ease-out;
-}
-
-.settings-card {
-  background: var(--card);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.12);
-  animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 22px 24px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  transition: background 0.3s;
-}
-
-.setting-item:hover {
-  background: rgba(108,92,231,0.03);
-}
-
-.setting-item:last-child { border-bottom: none; }
-
-.setting-item label {
-  font-weight: 600;
-  font-size: 16px;
-  margin: 0;
-  color: var(--text);
-}
-
-.toggle {
-  width: 56px;
-  height: 32px;
-  background: #dfe6e9;
-  border-radius: 16px;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.toggle.active { 
-  background: var(--success); 
-  box-shadow: 0 4px 15px rgba(0,184,148,0.4);
-}
-
-.toggle::after {
-  content: '';
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  background: white;
-  border-radius: 50%;
-  top: 3px;
-  left: 3px;
-  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-}
-
-.toggle.active::after { 
-  transform: translateX(24px); 
-}
-
-.section-header {
-  font-size: 12px;
-  color: var(--text-light);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  padding: 24px 24px 12px;
-  background: var(--card);
-  border-radius: 24px 24px 0 0;
-  margin-top: 24px;
-  font-weight: 700;
-}
-
-.edit-form {
-  background: var(--card);
-  border-radius: 0 0 24px 24px;
-  padding: 0 24px 24px;
-}
-
-.edit-form input {
-  margin-bottom: 12px;
-}
-
-.admin-btn {
-  width: 100%;
-  padding: 20px;
-  background: linear-gradient(135deg, #2d3436, #636e72);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 10px 35px rgba(0,0,0,0.25);
-  position: relative;
-  overflow: hidden;
-}
-
-.admin-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.6s;
-}
-
-.admin-btn:hover::before {
-  left: 100%;
-}
-
-.admin-btn:hover { 
-  transform: translateY(-4px);
-  box-shadow: 0 15px 45px rgba(0,0,0,0.3);
-}
-
-
-/* ===== АДМИН ПАНЕЛЬ ===== */
-.admin-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg);
-  z-index: 1000;
-  overflow-y: auto;
-  padding: 20px;
-  display: none;
-}
-
-.admin-panel.active { 
-  display: block; 
-  animation: adminSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes adminSlideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  color: white;
-}
-
-.admin-header h2 { 
-  font-size: 26px; 
-  animation: headerFloat 0.6s ease-out;
-}
-
-.close-btn {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: white;
-  backdrop-filter: blur(15px);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.close-btn:hover { 
-  background: rgba(255,255,255,0.25); 
-  transform: rotate(90deg) scale(1.1);
-}
-
-.admin-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.admin-tab {
-  padding: 12px 20px;
-  background: rgba(255,255,255,0.12);
-  border: none;
-  border-radius: 24px;
-  cursor: pointer;
-  font-size: 14px;
-  color: white;
-  font-weight: 600;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
-.admin-tab:hover {
-  background: rgba(255,255,255,0.2);
-  transform: translateY(-2px);
-}
-
-.admin-tab.active {
-  background: white;
-  color: var(--primary);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-}
-
-.admin-content {
-  background: var(--card);
-  border-radius: 24px;
-  padding: 20px;
-  min-height: 300px;
-  animation: contentIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes contentIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.user-list { display: flex; flex-direction: column; gap: 12px; }
-
-.user-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: linear-gradient(145deg, #f8f9fa, #f1f2f6);
-  border-radius: 18px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.user-item:hover { 
-  background: linear-gradient(145deg, #f1f2f6, #e9ecef);
-  transform: translateX(8px);
-}
-
-.user-item.selected { 
-  border-color: var(--primary); 
-  background: rgba(108,92,231,0.08);
-  box-shadow: 0 8px 25px rgba(108,92,231,0.15);
-}
-
-.user-item.blocked { opacity: 0.5; }
-
-.user-item img {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.user-avatar-placeholder {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #dfe6e9, #b2bec3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.user-info { flex: 1; min-width: 0; }
-.user-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-.user-id { font-size: 12px; color: var(--text-light); margin-top: 2px; }
-.user-stats { text-align: right; font-size: 13px; color: var(--text-light); font-weight: 600; }
-
-.blocked-badge {
-  background: var(--danger);
-  color: white;
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-weight: 700;
-}
-
-.id-input {
-  margin: 20px 0;
-  padding: 16px;
-  background: linear-gradient(145deg, #f8f9fa, #f1f2f6);
-  border-radius: 18px;
-}
-
-.id-input input { margin: 0; }
-
-.action-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.action-btn {
-  padding: 14px 10px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 700;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.action-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255,255,255,0.3);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.4s, height 0.4s;
-}
-
-.action-btn:active::before {
-  width: 200px;
-  height: 200px;
-}
-
-.action-btn:hover { transform: translateY(-3px) scale(1.02); }
-.action-btn:active { transform: scale(0.95); }
-
-.action-btn.add { 
-  background: linear-gradient(135deg, #00b894, #00cec9); 
-  color: white; 
-  box-shadow: 0 6px 20px rgba(0,184,148,0.35);
-}
-
-.action-btn.remove { 
-  background: linear-gradient(135deg, #e74c3c, #c0392b); 
-  color: white; 
-  box-shadow: 0 6px 20px rgba(231,76,60,0.35);
-}
-
-.action-btn.edit { 
-  background: linear-gradient(135deg, #6c5ce7, #a29bfe); 
-  color: white; 
-  box-shadow: 0 6px 20px rgba(108,92,231,0.35);
-}
-
-/* ===== МОДАЛКИ ===== */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.7);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 24px;
-  backdrop-filter: blur(10px);
-}
-
-.modal.active { 
-  display: flex; 
-  animation: modalBgIn 0.3s ease-out;
-}
-
-@keyframes modalBgIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-content {
-  background: white;
-  border-radius: 28px;
-  padding: 28px;
-  width: 100%;
-  max-width: 380px;
-  max-height: 85vh;
-  overflow-y: auto;
-  animation: modalContentIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 30px 100px rgba(0,0,0,0.3);
-}
-
-@keyframes modalContentIn {
-  from { transform: scale(0.8) translateY(50px); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-body.dark .modal-content {
-  background: #1a1a2e;
-}
-
-.modal-content h3 {
-  font-size: 20px;
-  margin-bottom: 24px;
-  text-align: center;
-  font-weight: 700;
-}
-
-.modal-buttons {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.modal-buttons button { flex: 1; }
-
-/* Модалка подробностей */
-.detail-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.75);
-  display: none;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(10px);
-}
-
-.detail-modal.active {
-  display: flex;
-  animation: modalBgIn 0.3s ease-out;
-}
-
-.detail-content {
-  background: white;
-  border-radius: 32px 32px 0 0;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 28px;
-  padding-bottom: 50px;
-  position: relative;
-  animation: detailSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes detailSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-body.dark .detail-content {
-  background: #1a1a2e;
-}
-
-.detail-close {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #f1f2f6;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 10;
-}
-
-.detail-close:hover {
-  background: #dfe6e9;
-  transform: rotate(90deg) scale(1.1);
-}
-
-.detail-icon {
-  font-size: 56px;
-  text-align: center;
-  margin-bottom: 16px;
-  animation: iconBounce 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes iconBounce {
-  from { transform: scale(0) rotate(-20deg); }
-  50% { transform: scale(1.2) rotate(10deg); }
-  to { transform: scale(1) rotate(0deg); }
-}
-
-.detail-badge {
-  display: inline-block;
-  padding: 8px 20px;
-  border-radius: 24px;
-  font-size: 13px;
-  font-weight: 700;
-  margin: 0 auto 20px;
-  text-align: center;
-  animation: badgeIn 0.5s ease-out 0.2s both;
-}
-
-@keyframes badgeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.detail-badge.current {
-  background: linear-gradient(135deg, rgba(108,92,231,0.2), rgba(162,155,254,0.2));
-  color: var(--primary);
-}
-
-.detail-badge.past {
-  background: rgba(99,110,114,0.12);
-  color: #636e72;
-}
-
-.detail-badge.done {
-  background: linear-gradient(135deg, rgba(0,184,148,0.2), rgba(0,206,201,0.2));
-  color: var(--success);
-}
-
-.detail-badge.pending {
-  background: linear-gradient(135deg, rgba(253,203,110,0.35), rgba(225,112,85,0.25));
-  color: #e17055;
-}
-
-.detail-badge.overdue {
-  background: rgba(231,76,60,0.18);
-  color: var(--danger);
-}
-
-.detail-title {
-  font-size: 26px;
-  font-weight: 800;
-  text-align: center;
-  margin-bottom: 14px;
-  color: var(--text);
-  animation: titleIn 0.5s ease-out 0.1s both;
-}
-
-@keyframes titleIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.detail-date {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: var(--text-light);
-  font-size: 15px;
-  margin-bottom: 28px;
-  font-weight: 500;
-}
-
-.detail-section {
-  background: linear-gradient(145deg, #f8f9fa, #f1f2f6);
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 18px;
-  animation: sectionIn 0.5s ease-out both;
-}
-
-.detail-section:nth-child(1) { animation-delay: 0.2s; }
-.detail-section:nth-child(2) { animation-delay: 0.3s; }
-.detail-section:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes sectionIn {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-body.dark .detail-section {
-  background: rgba(255,255,255,0.06);
-}
-
-.detail-section h3 {
-  font-size: 15px;
-  color: var(--primary);
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-
-.detail-section p {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--text);
-}
-
-.detail-stats {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-top: 28px;
-}
-
-.detail-stat {
-  text-align: center;
-  animation: statPop 0.5s ease-out 0.4s both;
-}
-
-@keyframes statPop {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.detail-stat .num {
-  font-size: 38px;
-  font-weight: 800;
-  color: var(--primary);
-  display: block;
-}
-
-.detail-stat .label {
-  font-size: 13px;
-  color: var(--text-light);
-  font-weight: 600;
-}
-
-#detail-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-#detail-body .detail-section {
-  width: 100%;
-  text-align: left;
-}
-
-/* ===== TOAST ===== */
-.toast {
-  position: fixed;
-  bottom: 110px;
-  left: 50%;
-  transform: translateX(-50%) translateY(30px);
-  background: rgba(45,52,54,0.95);
-  color: white;
-  padding: 16px 32px;
-  border-radius: 40px;
-  font-size: 15px;
-  font-weight: 600;
-  z-index: 3000;
-  opacity: 0;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(15px);
-  box-shadow: 0 15px 50px rgba(0,0,0,0.25);
-}
-
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  animation: toastBounce 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes toastBounce {
-  0% { transform: translateX(-50%) translateY(30px) scale(0.8); }
-  50% { transform: translateX(-50%) translateY(-5px) scale(1.02); }
-  100% { transform: translateX(-50%) translateY(0) scale(1); }
-}
-
-
-/* ===== ОТПРАВКА ДЗ ===== */
-.submit-section {
-  background: linear-gradient(135deg, rgba(108,92,231,0.12), rgba(162,155,254,0.12));
-}
-
-.media-upload {
-  margin-bottom: 16px;
-}
-
-.upload-btn {
-  display: block;
-  padding: 20px;
-  background: white;
-  border: 3px dashed var(--primary-light);
-  border-radius: 18px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  font-size: 15px;
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.upload-btn:hover {
-  background: rgba(108,92,231,0.08);
-  border-color: var(--primary);
-  transform: scale(1.02);
-}
-
-.upload-hint {
-  font-size: 12px;
-  color: var(--text-light);
-  text-align: center;
-  margin-top: 8px;
-}
-
-.media-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.preview-item {
-  position: relative;
-  width: calc(50% - 5px);
-  border-radius: 16px;
-  overflow: hidden;
-  background: #f1f2f6;
-  animation: previewIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes previewIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.preview-item img,
-.preview-item video {
-  width: 100%;
-  height: 130px;
-  object-fit: cover;
-}
-
-.preview-item.video video {
-  height: 130px;
-}
-
-.remove-media {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 28px;
-  height: 28px;
-  background: rgba(0,0,0,0.7);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.remove-media:hover {
-  background: var(--danger);
-  transform: scale(1.1);
-}
-
-.rejection-info {
-  background: rgba(231,76,60,0.12);
-  border-left: 5px solid var(--danger);
-}
-
-.size-warning {
-  background: rgba(231,76,60,0.12);
-  color: var(--danger);
-  padding: 14px;
-  border-radius: 14px;
-  font-size: 13px;
-  text-align: center;
-  margin-bottom: 10px;
-  font-weight: 600;
-  animation: warningShake 0.5s ease-in-out;
-}
-
-@keyframes warningShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-/* ===== ЗАЯВКИ В АДМИНКЕ ===== */
-.submissions-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.sub-tab {
-  flex: 1;
-  padding: 12px;
-  background: linear-gradient(145deg, #f8f9fa, #f1f2f6);
-  border: none;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.sub-tab:hover {
-  transform: translateY(-2px);
-}
-
-.sub-tab.active {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: white;
-  box-shadow: 0 8px 25px rgba(108,92,231,0.35);
-}
-
-.sub-content {
-  display: none;
-}
-
-.sub-content.active {
-  display: block;
-  animation: tabIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.submission-card {
-  background: linear-gradient(145deg, #f8f9fa, #f1f2f6);
-  border-radius: 18px;
-  padding: 18px;
-  margin-bottom: 14px;
-  border-left: 5px solid var(--warning);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: cardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.submission-card:hover {
-  transform: translateX(8px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.submission-card.approved {
-  border-left-color: var(--success);
-  opacity: 0.75;
-}
-
-.submission-card.rejected {
-  border-left-color: var(--danger);
-  opacity: 0.75;
-}
-
-.sub-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.sub-user strong {
-  display: block;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.sub-date {
-  font-size: 12px;
-  color: var(--text-light);
-  margin-top: 2px;
-}
-
-.sub-status {
-  font-size: 24px;
-  animation: statusPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes statusPop {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
-}
-
-.sub-hw {
-  font-size: 14px;
-  color: var(--primary);
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.sub-has-photo {
-  font-size: 13px;
-  color: var(--success);
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-
-.sub-comment {
-  font-size: 13px;
-  color: var(--text-light);
-  font-style: italic;
-  margin-bottom: 12px;
-}
-
-.sub-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.sub-actions .action-btn {
-  flex: 1;
-  padding: 10px;
-  font-size: 13px;
-}
-
-.sub-detail-info {
-  background: linear-gradient(145deg, #f8f9fa, #f1f2f6);
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 20px;
-}
-
-.sub-detail-info p {
-  margin-bottom: 10px;
-  font-size: 15px;
-}
-
-.sub-detail-info p:last-child {
-  margin-bottom: 0;
-}
-
-.sub-photo-full {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.sub-photo-full img {
-  width: 100%;
-  max-height: 350px;
-  object-fit: contain;
-  background: #f1f2f6;
-}
-
-.sub-media-gallery {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.gallery-item {
-  border-radius: 16px;
-  overflow: hidden;
-  background: #f1f2f6;
-  animation: galleryIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes galleryIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.gallery-item img {
-  width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-}
-
-.gallery-item video {
-  width: 100%;
-  max-height: 350px;
-}
-
-/* Секции ДЗ в админке */
-.hw-section-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-light);
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid rgba(0,0,0,0.08);
-}
-
-.homework-card.past-hw {
-  opacity: 0.7;
-  border-left: 4px solid var(--text-light);
-}
-
-/* ===== СКРОЛЛБАР ===== */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(var(--primary-light), var(--primary));
-  border-radius: 8px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
-}
-
-/* ===== ВЫДЕЛЕНИЕ ТЕКСТА ===== */
-::selection {
-  background: rgba(108,92,231,0.3);
-  color: var(--text);
-}
-
-/* ===== ПЛАВНЫЕ ПЕРЕХОДЫ ДЛЯ ВСЕГО ===== */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button, input, textarea {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-
-/* ===== ПИТОМЕЦ (ТАМАГОЧИ) ===== */
-.pet-page {
-  padding-bottom: 20px;
-}
-
-.pet-card {
-  background: var(--card);
-  border-radius: 28px;
-  padding: 20px;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.18);
-  animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
-  position: relative;
-}
-
-.pet-card::before {
-  content: '';
-  position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(108,92,231,0.1) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.pet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  position: relative;
-  z-index: 1;
-}
-
-.pet-name-display {
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pet-streak {
-  background: linear-gradient(135deg, #ff6b6b, #ffa502);
-  color: white;
-  padding: 6px 14px;
-  border-radius: 16px;
-  font-size: 13px;
-  font-weight: 700;
-  animation: streakPulse 2s ease-in-out infinite;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-@keyframes streakPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(255,107,107,0.3); }
-  50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255,107,107,0.5); }
-}
-
-.pet-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 0;
-  min-height: 180px;
-}
-
-.pet-phrase {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  background: white;
-  padding: 8px 16px;
-  border-radius: 16px;
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-  opacity: 0;
-  transition: all 0.4s;
-  white-space: nowrap;
-  max-width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  z-index: 10;
-}
-
-.pet-phrase::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid white;
-}
-
-.pet-phrase.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  animation: phraseFloat 3s ease-in-out infinite;
-}
-
-@keyframes phraseFloat {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-4px); }
-}
-
-.pet-avatar {
-  font-size: 100px;
-  line-height: 1;
-  animation: petIdle 3s ease-in-out infinite;
-  position: relative;
-  z-index: 1;
-  transition: transform 0.3s;
-  cursor: pointer;
-  user-select: none;
-}
-
-.pet-avatar:active {
-  transform: scale(0.9);
-}
-
-@keyframes petIdle {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-6px) rotate(-2deg); }
-  75% { transform: translateY(-6px) rotate(2deg); }
-}
-
-.pet-state-emoji {
-  position: absolute;
-  top: 30px;
-  right: calc(50% - 70px);
-  font-size: 32px;
-  z-index: 5;
-  opacity: 0;
-  transform: scale(0);
-  transition: all 0.3s ease-out;
-}
-
-.pet-state-emoji.show {
-  opacity: 1;
-  transform: scale(1);
-  animation: stateEmojiBounce 0.5s ease-out;
-}
-
-.pet-state-emoji.hide {
-  opacity: 0;
-  transform: scale(0) rotate(20deg);
-  transition: all 0.3s ease-in;
-}
-
-@keyframes stateEmojiBounce {
-  0% { transform: scale(0) rotate(-20deg); }
-  50% { transform: scale(1.3) rotate(10deg); }
-  100% { transform: scale(1) rotate(0deg); }
-}
-
-/* Анимации действий */
-.pet-action-feed {
-  animation: petEat 0.5s ease-in-out !important;
-}
-
-@keyframes petEat {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.1) rotate(-5deg); }
-  50% { transform: scale(0.95) rotate(5deg); }
-  75% { transform: scale(1.05) rotate(-3deg); }
-}
-
-.pet-action-play {
-  animation: petPlay 0.6s ease-in-out !important;
-}
-
-@keyframes petPlay {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-30px) rotate(-10deg); }
-  50% { transform: translateY(0) rotate(10deg); }
-  75% { transform: translateY(-20px) rotate(-5deg); }
-}
-
-.pet-action-sleep {
-  animation: petSleep 1s ease-in-out !important;
-}
-
-@keyframes petSleep {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(0.9) rotate(5deg); }
-}
-
-.pet-action-wash {
-  animation: petWash 0.5s ease-in-out !important;
-}
-
-@keyframes petWash {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-15deg); }
-  75% { transform: rotate(15deg); }
-}
-
-.pet-action-pet {
-  animation: petPet 0.5s ease-in-out !important;
-}
-
-@keyframes petPet {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
-.pet-action-walk {
-  animation: petWalk 0.6s ease-in-out !important;
-}
-
-@keyframes petWalk {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-20px); }
-  75% { transform: translateX(20px); }
-}
-
-.pet-shadow {
-  width: 80px;
-  height: 20px;
-  background: radial-gradient(ellipse, rgba(0,0,0,0.2), transparent);
-  border-radius: 50%;
-  margin-top: -10px;
-  animation: shadowPulse 3s ease-in-out infinite;
-}
-
-@keyframes shadowPulse {
-  0%, 100% { transform: scale(1); opacity: 0.3; }
-  25%, 75% { transform: scale(0.9); opacity: 0.2; }
-}
-
-.pet-mood-bar {
-  display: flex;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-.mood-icons {
-  display: flex;
-  gap: 20px;
-  font-size: 28px;
-  opacity: 0.4;
-}
-
-.pet-task {
-  background: linear-gradient(135deg, rgba(253,203,110,0.25), rgba(225,112,85,0.15));
-  border-radius: 18px;
-  padding: 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  animation: taskIn 0.5s ease-out;
-  border: 2px solid rgba(253,203,110,0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.pet-task::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: taskShine 3s ease-in-out infinite;
-}
-
-@keyframes taskShine {
-  0% { left: -100%; }
-  50%, 100% { left: 100%; }
-}
-
-.pet-task.urgent {
-  background: linear-gradient(135deg, rgba(231,76,60,0.25), rgba(192,57,43,0.15));
-  border-color: var(--danger);
-  animation: taskUrgent 0.8s ease-in-out infinite;
-}
-
-@keyframes taskIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes taskUrgent {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231,76,60,0.4); }
-  50% { transform: scale(1.01); box-shadow: 0 0 0 8px rgba(231,76,60,0); }
-}
-
-.task-icon {
-  font-size: 36px;
-  animation: taskIconBounce 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes taskIconBounce {
-  0%, 100% { transform: rotate(-5deg) scale(1); }
-  50% { transform: rotate(5deg) scale(1.1); }
-}
-
-.task-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.task-text {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 3px;
-}
-
-.task-timer {
-  font-size: 12px;
-  color: var(--text-light);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.task-timer.urgent {
-  color: var(--danger);
-  animation: timerBlink 0.5s ease-in-out infinite;
-}
-
-@keyframes timerBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.task-btn {
-  background: var(--gold);
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 15px rgba(241,39,17,0.3);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.task-btn:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 6px 20px rgba(241,39,17,0.4);
-}
-
-.task-btn:active {
-  transform: scale(0.95);
-}
-
-.pet-happy {
-  background: linear-gradient(135deg, rgba(0,184,148,0.2), rgba(0,206,201,0.1));
-  border-radius: 18px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--success);
-  border: 2px solid rgba(0,184,148,0.2);
-}
-
-.pet-happy span:first-child {
-  font-size: 26px;
-  animation: happyBounce 1.5s ease-in-out infinite;
-}
-
-@keyframes happyBounce {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  25% { transform: scale(1.2) rotate(-10deg); }
-  75% { transform: scale(1.2) rotate(10deg); }
-}
-
-.pet-actions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 0;
-}
-
-.pet-action-btn {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  border: none;
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  font-size: 24px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-.pet-action-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(108,92,231,0.2), rgba(108,92,231,0.05));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.pet-action-btn:hover::before {
-  opacity: 1;
-}
-
-.pet-action-btn:hover {
-  transform: translateY(-4px) scale(1.1);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
-}
-
-.pet-action-btn:active {
-  transform: scale(0.9);
-}
-
-/* Создание питомца */
-.pet-create-card {
-  background: var(--card);
-  border-radius: 28px;
-  padding: 28px 20px;
-  text-align: center;
-  box-shadow: 0 25px 80px rgba(0,0,0,0.18);
-  animation: cardIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
-  max-width: 100%;
-}
-
-.pet-create-icon {
-  font-size: 70px;
-  margin-bottom: 16px;
-  animation: eggWiggle 2s ease-in-out infinite;
-}
-
-@keyframes eggWiggle {
-  0%, 100% { transform: rotate(-5deg) scale(1); }
-  50% { transform: rotate(5deg) scale(1.05); }
-}
-
-.pet-create-card h2 {
-  font-size: 22px;
-  font-weight: 800;
-  margin-bottom: 8px;
-  color: var(--text);
-}
-
-.pet-create-card p {
-  color: var(--text-light);
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-
-.pet-select-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.pet-select-grid::-webkit-scrollbar {
-  width: 4px;
-}
-
-.pet-select-grid::-webkit-scrollbar-thumb {
-  background: var(--primary-light);
-  border-radius: 4px;
-}
-
-.pet-select-item {
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  border-radius: 14px;
-  padding: 12px 6px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 2px solid transparent;
-  min-width: 0;
-}
-
-.pet-select-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-}
-
-.pet-select-item.selected {
-  border-color: var(--primary);
-  background: linear-gradient(145deg, rgba(108,92,231,0.15), rgba(108,92,231,0.08));
-  transform: scale(1.02);
-  box-shadow: 0 8px 25px rgba(108,92,231,0.25);
-}
-
-.pet-select-emoji {
-  font-size: 32px;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.pet-select-name {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-light);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pet-name-input {
-  animation: slideUp 0.4s ease-out;
-}
-
-.pet-name-input input {
-  margin-bottom: 14px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-/* Мертвый питомец */
-.pet-dead {
-  filter: grayscale(1);
-  opacity: 0.5;
-  animation: petDead 2s ease-in-out infinite;
-}
-
-@keyframes petDead {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
-}
-
-/* Кнопка редактирования питомца */
-.pet-header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.pet-edit-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pet-edit-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-/* Модалка редактирования питомца */
-.pet-edit-modal {
-  max-width: 340px;
-  padding: 24px 20px;
-}
-
-.pet-edit-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.pet-edit-modal .modal-header h3 {
-  font-size: 20px;
-  font-weight: 800;
-  margin: 0;
-}
-
-.pet-edit-modal .modal-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: #f1f2f6;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.pet-edit-modal .modal-close:hover {
-  background: #e4e6eb;
-  transform: rotate(90deg);
-}
-
-.pet-edit-section {
-  margin-bottom: 20px;
-}
-
-.pet-edit-section label {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 10px;
-}
-
-.pet-edit-section input {
-  margin-bottom: 12px;
-}
-
-.edit-hint {
-  font-size: 12px;
-  color: var(--success);
-  margin-top: 8px;
-  text-align: center;
-}
-
-.edit-warning {
-  font-size: 13px;
-  color: var(--danger);
-  margin-bottom: 12px;
-  text-align: center;
-  font-weight: 600;
-}
-
-.pet-edit-divider {
-  display: flex;
-  align-items: center;
-  margin: 20px 0;
-}
-
-.pet-edit-divider::before,
-.pet-edit-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: #e0e0e0;
-}
-
-.pet-edit-divider span {
-  padding: 0 16px;
-  color: var(--text-light);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* Мини-сетка выбора питомца */
-.pet-select-grid-mini {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.pet-select-item-mini {
-  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-  border-radius: 12px;
-  padding: 10px 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-  text-align: center;
-}
-
-.pet-select-item-mini:hover {
-  transform: translateY(-2px);
-}
-
-.pet-select-item-mini.current {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pet-select-item-mini.selected {
-  border-color: var(--primary);
-  background: rgba(108,92,231,0.1);
-}
-
-.pet-select-item-mini .pet-select-emoji {
-  font-size: 28px;
-}
-
-
-/* ===== МАГАЗИН ПИТОМЦА ===== */
-.pet-shop-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.pet-shop-btn, .pet-inventory-btn {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.pet-shop-btn {
-  background: linear-gradient(135deg, #fdcb6e, #e17055);
-  color: white;
-}
-
-.pet-inventory-btn {
-  background: linear-gradient(135deg, #74b9ff, #0984e3);
-  color: white;
-}
-
-.pet-shop-btn:hover, .pet-inventory-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-
-.pet-outfit-display {
-  text-align: center;
-  font-size: 24px;
-  margin-top: 12px;
-  padding: 10px;
-  background: rgba(108,92,231,0.08);
-  border-radius: 12px;
-}
-
-/* Модалка магазина */
-.pet-shop-modal {
-  max-width: 360px;
-  padding: 20px;
-}
-
-.pet-shop-modal .modal-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.pet-shop-modal .modal-header h3 {
-  flex: 1;
-  margin: 0;
-  font-size: 20px;
-}
-
-.pet-shop-modal .modal-close,
-.pet-inventory-modal .modal-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(145deg, #f1f2f6, #dfe6e9);
-  font-size: 20px;
-  font-weight: 700;
-  color: #636e72;
-  cursor: pointer;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.pet-shop-modal .modal-close:hover,
-.pet-inventory-modal .modal-close:hover {
-  background: linear-gradient(145deg, #e74c3c, #c0392b);
-  color: white;
-  transform: rotate(90deg) scale(1.1);
-  box-shadow: 0 4px 15px rgba(231,76,60,0.3);
-}
-
-.shop-balance {
-  background: linear-gradient(135deg, #fdcb6e, #e17055);
-  color: white;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.shop-tabs {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.shop-tab {
-  flex: 1;
-  min-width: 70px;
-  padding: 8px 6px;
-  border: none;
-  border-radius: 10px;
-  background: #f1f2f6;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.shop-tab.active {
-  background: var(--primary);
-  color: white;
-}
-
-.shop-items {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.shop-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  transition: all 0.3s;
-}
-
-.shop-item.owned {
-  background: rgba(0,184,148,0.1);
-}
-
-.shop-item-emoji {
-  font-size: 28px;
-}
-
-.shop-item-name {
-  flex: 1;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.shop-item-price {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-light);
-}
-
-.shop-item.owned .shop-item-price {
-  color: var(--success);
-}
-
-.shop-buy-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background: var(--gold);
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.shop-buy-btn:hover {
-  transform: scale(1.05);
-}
-
-/* Модалка инвентаря */
-.pet-inventory-modal {
-  max-width: 340px;
-  padding: 20px;
-}
-
-.pet-inventory-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.pet-inventory-modal .modal-header h3 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.inventory-current {
-  margin-bottom: 16px;
-}
-
-.inventory-current p {
-  font-size: 13px;
-  color: var(--text-light);
-  margin-bottom: 10px;
-}
-
-.current-outfit {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.outfit-slot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 10px;
-}
-
-.slot-label {
-  font-size: 11px;
-  color: var(--text-light);
-}
-
-.slot-item {
-  flex: 1;
-  font-size: 20px;
-  text-align: center;
-}
-
-.slot-remove {
-  width: 24px;
-  height: 24px;
-  border: none;
-  border-radius: 50%;
-  background: var(--danger);
-  color: white;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.slot-remove:hover {
-  transform: scale(1.1);
-}
-
-.inventory-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.inventory-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 10px;
-}
-
-.inventory-item.worn {
-  background: rgba(108,92,231,0.1);
-  border: 2px solid var(--primary);
-}
-
-.inv-item-emoji {
-  font-size: 24px;
-}
-
-.inv-item-name {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.inv-worn-badge {
-  font-size: 11px;
-  color: var(--primary);
-  font-weight: 700;
-}
-
-.inv-wear-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background: var(--primary);
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.empty-inventory {
-  text-align: center;
-  padding: 30px;
-  color: var(--text-light);
-  font-size: 14px;
-}
-
-/* Инфо о наклейках на прогрессе */
-.stickers-info {
-  font-size: 13px;
-  color: rgba(255,255,255,0.8);
-  margin-top: 8px;
-}
-
-/* ===== ЧЕКБОКС ===== */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-  cursor: pointer;
-}
-
-.checkbox-input {
-  width: 22px !important;
-  height: 22px !important;
-  min-height: 22px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  cursor: pointer;
-  accent-color: var(--primary);
-}
-
-.checkbox-text {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-
-/* ===== СЕЗОНЫ ПИТОМЦА ===== */
-.pet-season-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-  border-radius: 28px;
-}
-
-.season-emoji {
-  position: absolute;
-  font-size: 30px;
-  opacity: 0.3;
-  animation: seasonFloat 8s ease-in-out infinite;
-}
-
-.season-emoji.s1 { top: 10%; left: 10%; animation-delay: 0s; }
-.season-emoji.s2 { top: 20%; right: 15%; animation-delay: 1.5s; }
-.season-emoji.s3 { bottom: 30%; left: 20%; animation-delay: 3s; }
-.season-emoji.s4 { bottom: 15%; right: 10%; animation-delay: 4.5s; }
-.season-emoji.s5 { top: 50%; left: 5%; animation-delay: 6s; }
-
-@keyframes seasonFloat {
-  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.2; }
-  50% { transform: translateY(-15px) rotate(10deg); opacity: 0.4; }
-}
-
-/* Весна */
-.pet-season-spring {
-  background: linear-gradient(180deg, rgba(168,230,207,0.3) 0%, var(--card) 50%);
-}
-.pet-season-spring .pet-season-bg { background: linear-gradient(180deg, rgba(168,230,207,0.2), transparent); }
-
-/* Лето */
-.pet-season-summer {
-  background: linear-gradient(180deg, rgba(255,234,167,0.3) 0%, var(--card) 50%);
-}
-.pet-season-summer .pet-season-bg { background: linear-gradient(180deg, rgba(255,234,167,0.2), transparent); }
-
-/* Осень */
-.pet-season-autumn {
-  background: linear-gradient(180deg, rgba(250,177,160,0.3) 0%, var(--card) 50%);
-}
-.pet-season-autumn .pet-season-bg { background: linear-gradient(180deg, rgba(250,177,160,0.2), transparent); }
-
-/* Зима */
-.pet-season-winter {
-  background: linear-gradient(180deg, rgba(116,185,255,0.3) 0%, var(--card) 50%);
-}
-.pet-season-winter .pet-season-bg { background: linear-gradient(180deg, rgba(200,220,255,0.3), transparent); }
-.pet-season-winter .season-emoji { animation: snowFall 6s ease-in-out infinite; }
-
-@keyframes snowFall {
-  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-  50% { transform: translateY(20px) rotate(180deg); opacity: 0.5; }
-}
-
-.season-badge {
-  font-size: 16px;
-  margin-left: 4px;
-}
-
-/* ===== ОДЕЖДА НА ПИТОМЦЕ ===== */
-.pet-avatar-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 140px;
-  height: 140px;
-}
-
-.pet-avatar-wrapper .pet-avatar {
-  position: relative;
-  z-index: 2;
-}
-
-/* Базовые стили для одежды */
-.outfit-item {
-  position: absolute;
-  pointer-events: none;
-  line-height: 1;
-  text-align: center;
-}
-
-/* Шапка - на голове сверху */
-.outfit-item.outfit-hat {
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 36px;
-  z-index: 10;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
-  animation: hatFloat 3s ease-in-out infinite;
-}
-
-@keyframes hatFloat {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50% { transform: translateX(-50%) translateY(-5px); }
-}
-
-/* Аксессуар - на лице/глазах */
-.outfit-item.outfit-accessory {
-  top: 35%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 30px;
-  z-index: 15;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-  animation: accessoryShine 2.5s ease-in-out infinite;
-}
-
-@keyframes accessoryShine {
-  0%, 100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)) brightness(1); }
-  50% { filter: drop-shadow(0 2px 8px rgba(255,255,255,0.3)) brightness(1.1); }
-}
-
-/* Шарф - на шее снизу питомца */
-.outfit-item.outfit-scarf {
-  bottom: 25px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 32px;
-  z-index: 5;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-  animation: scarfSway 4s ease-in-out infinite;
-}
-
-@keyframes scarfSway {
-  0%, 100% { transform: translateX(-50%) rotate(-3deg); }
-  50% { transform: translateX(-50%) rotate(3deg); }
-}
-
-/* Обувь - внизу под питомцем */
-.outfit-item.outfit-shoes {
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 26px;
-  z-index: 1;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
-  animation: shoesStep 1s ease-in-out infinite;
-}
-
-@keyframes shoesStep {
-  0%, 100% { transform: translateX(-50%) scaleY(1); }
-  50% { transform: translateX(-50%) scaleY(0.95); }
-}
-
-
-
-
-
-
-
-
-
-
-
+// Генерация шагов дорожки
+function generateRoadItems(from, to, earnedOverride = null) {
+  const spentStickers = currentUser?.spentStickers || 0;
+  const earnedStickers = earnedOverride !== null ? earnedOverride : (currentUser?.stickers || 0) + spentStickers;
+  const threshold = settings.giftThreshold || 5;
+  let html = '';
+  
+  for (let i = from; i <= to; i++) {
+    const done = i <= earnedStickers;
+    const isCurrent = i === earnedStickers + 1;
+    const isGift = i % threshold === 0;
+    
+    let circleClass = 'step-circle';
+    if (done) circleClass += ' done';
+    if (isCurrent) circleClass += ' current';
+    if (isGift) circleClass += ' gift';
+    
+    const label = isGift ? `<span class="gift-label">🎁 Подарок!</span>` : `Шаг ${i}`;
+    
+    html += `
+      <div class="road-item" data-step="${i}">
+        <div class="${circleClass}">${!done && !isGift ? i : ''}</div>
+        <div class="step-info">
+          <div class="step-num">#${i}</div>
+          <div class="step-label">${label}</div>
+        </div>
+      </div>
+    `;
+  }
+  return html;
+}
+
+// Бесконечная подгрузка
+function setupInfiniteRoad() {
+  const container = document.getElementById('road-container');
+  if (!container) return;
+  
+  container.addEventListener('scroll', () => {
+    if (isLoadingMore) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    
+    // Если доскроллили почти до конца
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      loadMoreSteps();
+    }
+  });
+  
+  // Прокрутить к текущему шагу
+  setTimeout(() => {
+    const currentStep = document.querySelector('.step-circle.current');
+    if (currentStep) {
+      currentStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 300);
+}
+
+function loadMoreSteps() {
+  isLoadingMore = true;
+  const loader = document.getElementById('load-more');
+  if (loader) loader.style.display = 'flex';
+  
+  // Имитация загрузки
+  setTimeout(() => {
+    const road = document.getElementById('road');
+    const newFrom = loadedSteps + 1;
+    const newTo = loadedSteps + 15;
+    
+    road.insertAdjacentHTML('beforeend', generateRoadItems(newFrom, newTo));
+    loadedSteps = newTo;
+    
+    if (loader) loader.style.display = 'none';
+    isLoadingMore = false;
+  }, 300);
+}
+
+function renderTopics() {
+  const visible = (topics || []).filter(t => !t.isHidden);
+  const current = visible.filter(t => t.isCurrent);
+  const past = visible.filter(t => !t.isCurrent);
+  
+  const visibleHW = (homework || []).filter(h => !h.isHidden);
+  const now = new Date();
+  const currentHW = visibleHW.filter(h => new Date(h.dueDate) >= now);
+  const pastHW = visibleHW.filter(h => new Date(h.dueDate) < now);
+
+  const card = (items, type) => items.length ? items.map(t => {
+    const isDone = type === 'hw' && (t.completedBy || []).includes(currentUser?.tgId);
+    const dataAttr = type === 'hw' ? `data-hw-id="${t.id}"` : `data-topic-id="${t.id}"`;
+    return `
+      <div class="${type === 'hw' ? 'homework-card clickable' : 'topic-card clickable'} ${isDone ? 'completed' : ''}" ${dataAttr}>
+        <h4>${isDone ? '✅ ' : ''}${t.title}</h4>
+        <div class="date">📅 ${t.date || t.dueDate}</div>
+        ${t.description ? `<p class="preview">${t.description.substring(0, 50)}${t.description.length > 50 ? '...' : ''}</p>` : ''}
+        <div class="tap-hint">Нажми для подробностей →</div>
+      </div>
+    `;
+  }).join('') : `<div class="empty-state"><div class="icon">${type === 'hw' ? '✏️' : '📖'}</div><p>Пока пусто</p></div>`;
+
+  return `
+    <div class="topics-page">
+      <h2>📚 Темы занятий</h2>
+      <div class="tabs" id="t-tabs">
+        <button class="tab-btn active" data-t="cur-t">Текущие</button>
+        <button class="tab-btn" data-t="past-t">Пройденные</button>
+      </div>
+      <div id="cur-t" class="tab-content active">${card(current, 'topic')}</div>
+      <div id="past-t" class="tab-content">${card(past, 'topic')}</div>
+      
+      <h3 class="section-title">📝 Домашние задания</h3>
+      <div class="tabs" id="hw-tabs">
+        <button class="tab-btn active" data-t="cur-hw">Текущие</button>
+        <button class="tab-btn" data-t="past-hw">Прошлые</button>
+      </div>
+      <div id="cur-hw" class="tab-content active">${card(currentHW, 'hw')}</div>
+      <div id="past-hw" class="tab-content">${card(pastHW, 'hw')}</div>
+    </div>
+    
+    <!-- Модалка подробностей -->
+    <div class="detail-modal" id="detail-modal">
+      <div class="detail-content">
+        <button class="detail-close" id="detail-close">✕</button>
+        <div id="detail-body"></div>
+      </div>
+    </div>
+  `;
+}
+
+function setupTabs() {
+  ['t-tabs', 'hw-tabs'].forEach(id => {
+    document.querySelectorAll(`#${id} .tab-btn`).forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(`#${id} .tab-btn`).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tabs = id === 't-tabs' ? ['cur-t', 'past-t'] : ['cur-hw', 'past-hw'];
+        tabs.forEach(t => document.getElementById(t)?.classList.remove('active'));
+        document.getElementById(btn.dataset.t)?.classList.add('active');
+      };
+    });
+  });
+  
+  // Клик на темы
+  document.querySelectorAll('[data-topic-id]').forEach(el => {
+    el.onclick = () => showTopicDetail(el.dataset.topicId);
+  });
+  
+  // Клик на ДЗ
+  document.querySelectorAll('[data-hw-id]').forEach(el => {
+    el.onclick = () => showHWDetail(el.dataset.hwId);
+  });
+  
+  // Закрыть модалку
+  document.getElementById('detail-close')?.addEventListener('click', closeDetailModal);
+  document.getElementById('detail-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'detail-modal') closeDetailModal();
+  });
+}
+
+function showTopicDetail(id) {
+  const t = topics.find(x => x.id === id);
+  if (!t) return;
+  
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div class="detail-icon">📚</div>
+    <div class="detail-badge ${t.isCurrent ? 'current' : 'past'}">${t.isCurrent ? 'Текущая тема' : 'Пройденная тема'}</div>
+    <h2 class="detail-title">${t.title}</h2>
+    <div class="detail-date">
+      <span>📅</span>
+      <span>${t.date}</span>
+    </div>
+    ${t.description ? `
+      <div class="detail-section">
+        <h3>Описание</h3>
+        <p>${t.description}</p>
+      </div>
+    ` : ''}
+    <div class="detail-section">
+      <h3>Что изучаем</h3>
+      <p>На этом занятии мы разбираем тему "${t.title}". Внимательно слушай и задавай вопросы!</p>
+    </div>
+  `;
+  
+  document.getElementById('detail-modal').classList.add('active');
+}
+
+function showHWDetail(id) {
+  const h = homework.find(x => x.id === id);
+  if (!h) return;
+  
+  const isDone = (h.completedBy || []).includes(currentUser?.tgId);
+  const mySubmission = submissions.find(s => s.hwId === id && s.tgId === currentUser?.tgId);
+  const dueDate = new Date(h.dueDate);
+  const now = new Date();
+  const isOverdue = dueDate < now && !isDone;
+  const daysLeft = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+  
+  let statusBadge = '';
+  let statusText = '';
+  if (isDone) {
+    statusBadge = 'done';
+    statusText = 'Выполнено!';
+  } else if (mySubmission) {
+    if (mySubmission.status === 'pending') {
+      statusBadge = 'pending';
+      statusText = '⏳ На проверке';
+    } else if (mySubmission.status === 'rejected') {
+      statusBadge = 'overdue';
+      statusText = '❌ Отклонено';
+    }
+  } else if (isOverdue) {
+    statusBadge = 'overdue';
+    statusText = 'Просрочено';
+  } else {
+    statusBadge = 'pending';
+    statusText = `Осталось ${daysLeft} дн.`;
+  }
+  
+  const body = document.getElementById('detail-body');
+  body.innerHTML = `
+    <div class="detail-icon">${isDone ? '✅' : mySubmission?.status === 'pending' ? '⏳' : '📝'}</div>
+    <div class="detail-badge ${statusBadge}">${statusText}</div>
+    <h2 class="detail-title">${h.title}</h2>
+    <div class="detail-date">
+      <span>📅</span>
+      <span>Сдать до: ${h.dueDate}</span>
+    </div>
+    ${h.description ? `
+      <div class="detail-section">
+        <h3>📋 Задание</h3>
+        <p>${h.description}</p>
+      </div>
+    ` : ''}
+    ${!isDone && (!mySubmission || mySubmission.status === 'rejected') ? `
+      <div class="detail-section submit-section">
+        <h3>📤 Отправить на проверку</h3>
+        <form id="submit-hw-form" data-hw-id="${h.id}" data-hw-title="${h.title}">
+          <div class="media-upload">
+            <label class="upload-btn" for="hw-media">
+              <span id="media-preview-text">📷 Прикрепить фото/видео</span>
+            </label>
+            <input type="file" id="hw-media" accept="image/*,video/*" multiple style="display:none">
+            <div id="media-preview" class="media-preview"></div>
+            <div class="upload-hint">Можно выбрать несколько файлов</div>
+          </div>
+          <textarea id="hw-comment" placeholder="Комментарий (необязательно)" rows="2"></textarea>
+          <button type="submit" class="btn btn-primary">📤 Отправить</button>
+        </form>
+      </div>
+    ` : ''}
+    ${mySubmission && mySubmission.status === 'rejected' ? `
+      <div class="detail-section rejection-info">
+        <h3>❌ Причина отклонения</h3>
+        <p>${mySubmission.rejectReason || 'Не указана'}</p>
+      </div>
+    ` : ''}
+    <div class="detail-section">
+      <h3>💡 Подсказка</h3>
+      <p>Если возникли вопросы, обратись к преподавателю или напиши ${settings.adminUsername}</p>
+    </div>
+    <div class="detail-stats">
+      <div class="detail-stat">
+        <span class="num">${(h.completedBy || []).length}</span>
+        <span class="label">выполнили</span>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('detail-modal').classList.add('active');
+  
+  // Обработчики формы отправки
+  const form = document.getElementById('submit-hw-form');
+  const mediaInput = document.getElementById('hw-media');
+  
+  if (mediaInput) {
+    mediaInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      const preview = document.getElementById('media-preview');
+      preview.innerHTML = '';
+      
+      if (files.length > 0) {
+        // Проверяем размер
+        const MAX_FILE_SIZE = 20 * 1024 * 1024;
+        let hasLargeFile = false;
+        let totalSize = 0;
+        
+        files.forEach(f => {
+          totalSize += f.size;
+          if (f.size > MAX_FILE_SIZE) hasLargeFile = true;
+        });
+        
+        const sizeMB = (totalSize / 1024 / 1024).toFixed(1);
+        const sizeWarning = totalSize > 50 * 1024 * 1024 || hasLargeFile;
+        
+        document.getElementById('media-preview-text').textContent = 
+          `✅ Выбрано: ${files.length} файл(ов) (${sizeMB}MB)${sizeWarning ? ' ⚠️' : ''}`;
+        
+        if (sizeWarning) {
+          preview.innerHTML = '<div class="size-warning">⚠️ Файлы слишком большие! Макс: 20MB на файл, 50MB всего</div>';
+        }
+        
+        files.forEach((file, idx) => {
+          const isVideo = file.type.startsWith('video/');
+          // Для превью используем URL.createObjectURL вместо base64 (быстрее)
+          const objectUrl = URL.createObjectURL(file);
+          if (isVideo) {
+            preview.innerHTML += `<div class="preview-item video"><video src="${objectUrl}"></video></div>`;
+          } else {
+            preview.innerHTML += `<div class="preview-item"><img src="${objectUrl}" alt="preview"></div>`;
+          }
+        });
+      }
+    });
+  }
+  
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const hwId = form.dataset.hwId;
+      const hwTitle = form.dataset.hwTitle;
+      const comment = document.getElementById('hw-comment')?.value || '';
+      const files = mediaInput?.files ? Array.from(mediaInput.files) : [];
+      
+      // Проверка размера файлов (макс 20MB на файл, 50MB всего)
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+      const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB
+      let totalSize = 0;
+      
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          showToast(`Файл "${file.name}" слишком большой (макс 20MB)`);
+          return;
+        }
+        totalSize += file.size;
+      }
+      
+      if (totalSize > MAX_TOTAL_SIZE) {
+        showToast('Общий размер файлов слишком большой (макс 50MB)');
+        return;
+      }
+      
+      // Показываем загрузку
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = '⏳ Загрузка...';
+      submitBtn.disabled = true;
+      
+      try {
+        // Конвертируем все файлы в base64
+        const mediaData = [];
+        for (const file of files) {
+          const data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve({
+              data: ev.target.result,
+              type: file.type.startsWith('video/') ? 'video' : 'image',
+              name: file.name
+            });
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          mediaData.push(data);
+        }
+        
+        const result = await api.post('/api/submissions', {
+          hwId,
+          hwTitle,
+          tgId: currentUser.tgId,
+          userName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim(),
+          media: mediaData,
+          comment
+        });
+        
+        if (result.success) {
+          submissions = await api.get('/api/submissions');
+          closeDetailModal();
+          showToast('Отправлено на проверку! ✅');
+          renderPage('topics');
+        } else {
+          showToast(result.error || 'Ошибка отправки');
+        }
+      } catch (err) {
+        console.error('Submit error:', err);
+        showToast('Ошибка: ' + (err.message || 'Неизвестная ошибка'));
+      } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  }
+}
+
+function closeDetailModal() {
+  document.getElementById('detail-modal')?.classList.remove('active');
+}
+
+// ===== ПИТОМЕЦ (ТАМАГОЧИ) =====
+const PET_ANIMALS = [
+  { id: 'elephant', emoji: '🐘', name: 'Слонёнок' },
+  { id: 'cat', emoji: '🐱', name: 'Котёнок' },
+  { id: 'dog', emoji: '🐶', name: 'Щенок' },
+  { id: 'rabbit', emoji: '🐰', name: 'Зайчик' },
+  { id: 'bear', emoji: '🐻', name: 'Мишка' },
+  { id: 'panda', emoji: '🐼', name: 'Панда' },
+  { id: 'fox', emoji: '🦊', name: 'Лисёнок' },
+  { id: 'lion', emoji: '🦁', name: 'Львёнок' },
+  { id: 'monkey', emoji: '🐵', name: 'Обезьянка' },
+  { id: 'penguin', emoji: '🐧', name: 'Пингвин' },
+  { id: 'chick', emoji: '🐥', name: 'Цыплёнок' },
+  { id: 'frog', emoji: '🐸', name: 'Лягушонок' }
+];
+
+const PET_TASKS = [
+  { id: 'feed', emoji: '🍎', text: 'Покорми меня!', action: 'Покормить' },
+  { id: 'play', emoji: '⚽', text: 'Поиграй со мной!', action: 'Поиграть' },
+  { id: 'sleep', emoji: '😴', text: 'Уложи меня спать!', action: 'Уложить' },
+  { id: 'wash', emoji: '🛁', text: 'Помой меня!', action: 'Помыть' },
+  { id: 'pet', emoji: '💕', text: 'Погладь меня!', action: 'Погладить' },
+  { id: 'walk', emoji: '🚶', text: 'Погуляй со мной!', action: 'Погулять' }
+];
+
+const PET_PHRASES = [
+  '💭 Как дела?',
+  '💭 Ты мой лучший друг!',
+  '💭 Мне так хорошо с тобой!',
+  '💭 Давай играть!',
+  '💭 Я тебя люблю!',
+  '💭 Ты самый лучший!',
+  '💭 Мур-мур...',
+  '💭 Хочу обнимашки!',
+  '💭 Ты сегодня красивый!',
+  '💭 Скучал по тебе!',
+  '💭 Ура, ты пришёл!',
+  '💭 Давай веселиться!',
+  '💭 Ты мой герой!',
+  '💭 Спасибо что заботишься!',
+  '💭 Мне повезло с тобой!'
+];
+
+// Магазин одежды для питомца
+const PET_SHOP_ITEMS = [
+  // Шапки
+  { id: 'hat_crown', emoji: '👑', name: 'Корона', type: 'hat', price: 3 },
+  { id: 'hat_cap', emoji: '🧢', name: 'Кепка', type: 'hat', price: 2 },
+  { id: 'hat_tophat', emoji: '🎩', name: 'Цилиндр', type: 'hat', price: 4 },
+  { id: 'hat_party', emoji: '🥳', name: 'Колпак', type: 'hat', price: 2 },
+  { id: 'hat_cowboy', emoji: '🤠', name: 'Ковбойская', type: 'hat', price: 3 },
+  { id: 'hat_santa', emoji: '🎅', name: 'Новогодняя', type: 'hat', price: 5 },
+  // Шарфы  
+  { id: 'scarf_red', emoji: '🧣', name: 'Красный шарф', type: 'scarf', price: 2 },
+  { id: 'scarf_blue', emoji: '🧣', name: 'Синий шарф', type: 'scarf', price: 2 },
+  { id: 'scarf_green', emoji: '🧣', name: 'Зелёный шарф', type: 'scarf', price: 3 },
+  // Обувь
+  { id: 'shoes_sneakers', emoji: '👟', name: 'Кроссовки', type: 'shoes', price: 3 },
+  { id: 'shoes_boots', emoji: '👢', name: 'Сапожки', type: 'shoes', price: 3 },
+  { id: 'shoes_slippers', emoji: '🥿', name: 'Тапочки', type: 'shoes', price: 2 },
+  // Аксессуары
+  { id: 'acc_glasses', emoji: '🕶️', name: 'Очки', type: 'accessory', price: 2 },
+  { id: 'acc_bow', emoji: '🎀', name: 'Бантик', type: 'accessory', price: 1 },
+  { id: 'acc_medal', emoji: '🏅', name: 'Медаль', type: 'accessory', price: 4 },
+  { id: 'acc_necklace', emoji: '📿', name: 'Бусы', type: 'accessory', price: 2 }
+];
+
+function getPetData() {
+  return currentUser?.pet || null;
+}
+
+function renderPet() {
+  const pet = getPetData();
+  
+  if (!pet || pet.isDead) {
+    return renderPetCreate(pet?.isDead);
+  }
+  
+  return renderPetAlive(pet);
+}
+
+function renderPetCreate(wasDead = false) {
+  return `
+    <div class="pet-page">
+      <div class="pet-create-card">
+        <div class="pet-create-icon">${wasDead ? '😢' : '🥚'}</div>
+        <h2>${wasDead ? 'Твой питомец погиб...' : 'Заведи питомца!'}</h2>
+        <p>${wasDead ? 'Но ты можешь завести нового друга!' : 'Выбери себе милого друга и заботься о нём каждый день!'}</p>
+        
+        <div class="pet-select-grid">
+          ${PET_ANIMALS.map(a => `
+            <div class="pet-select-item" data-pet-id="${a.id}">
+              <span class="pet-select-emoji">${a.emoji}</span>
+              <span class="pet-select-name">${a.name}</span>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="pet-name-input" style="display:none">
+          <input type="text" id="pet-name" placeholder="Имя питомца" maxlength="20">
+          <button class="btn btn-primary" id="create-pet-btn">Создать! 🎉</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getCurrentSeason() {
+  // Меняем сезон каждый день (по номеру дня в году)
+  const now = new Date();
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const seasonIndex = dayOfYear % 4;
+  const seasons = [
+    { id: 'spring', name: 'Весна', bgEmojis: ['🌸', '🌷', '🌱'], emoji: '🌸' },
+    { id: 'summer', name: 'Лето', bgEmojis: ['☀️', '🌻', '🌴'], emoji: '☀️' },
+    { id: 'autumn', name: 'Осень', bgEmojis: ['🍂', '🍁', '🌰'], emoji: '🍂' },
+    { id: 'winter', name: 'Зима', bgEmojis: ['❄️', '⛄', '🌨️'], emoji: '❄️' }
+  ];
+  return seasons[seasonIndex];
+}
+
+function renderPetOutfitOnPet(pet) {
+  const outfit = pet.outfit || {};
+  const items = [];
+  
+  // Шапка сверху
+  if (outfit.hat) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.hat);
+    if (item) {
+      items.push(`<div class="outfit-item outfit-hat">${item.emoji}</div>`);
+    }
+  }
+  // Аксессуар справа
+  if (outfit.accessory) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.accessory);
+    if (item) {
+      items.push(`<div class="outfit-item outfit-accessory">${item.emoji}</div>`);
+    }
+  }
+  // Шарф слева
+  if (outfit.scarf) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.scarf);
+    if (item) {
+      items.push(`<div class="outfit-item outfit-scarf">${item.emoji}</div>`);
+    }
+  }
+  // Обувь снизу
+  if (outfit.shoes) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.shoes);
+    if (item) {
+      items.push(`<div class="outfit-item outfit-shoes">${item.emoji}</div>`);
+    }
+  }
+  
+  return items.join('');
+}
+
+function renderPetAlive(pet) {
+  const animal = PET_ANIMALS.find(a => a.id === pet.animalId) || PET_ANIMALS[0];
+  const task = pet.currentTask ? PET_TASKS.find(t => t.id === pet.currentTask.taskId) : null;
+  const phrase = getRandomPhrase(pet);
+  const timeLeft = task ? getTaskTimeLeft(pet.currentTask) : null;
+  const isUrgent = timeLeft && timeLeft.hours < 1;
+  const season = getCurrentSeason();
+  
+  return `
+    <div class="pet-page">
+      <div class="pet-card pet-season-${season.id}">
+        <div class="pet-season-bg">
+          <span class="season-emoji s1">${season.bgEmojis[0]}</span>
+          <span class="season-emoji s2">${season.bgEmojis[1]}</span>
+          <span class="season-emoji s3">${season.bgEmojis[2]}</span>
+          <span class="season-emoji s4">${season.bgEmojis[0]}</span>
+          <span class="season-emoji s5">${season.bgEmojis[1]}</span>
+        </div>
+        <div class="pet-header">
+          <div class="pet-name-display">${pet.name} <span class="season-badge">${season.emoji}</span></div>
+          <div class="pet-header-right">
+            <button class="pet-edit-btn" id="edit-pet-btn">✏️</button>
+            <div class="pet-streak">🔥 ${pet.streak || 0} дней</div>
+          </div>
+        </div>
+        
+        <div class="pet-container">
+          <div class="pet-phrase ${phrase ? 'show' : ''}">${phrase || ''}</div>
+          <div class="pet-avatar-wrapper">
+            <div class="pet-avatar" id="pet-avatar">
+              ${animal.emoji}
+              <span class="pet-state-emoji"></span>
+            </div>
+            ${renderPetOutfitOnPet(pet)}
+          </div>
+          <div class="pet-shadow"></div>
+        </div>
+        
+        ${task ? `
+          <div class="pet-task ${isUrgent ? 'urgent' : ''}">
+            <div class="task-icon">${task.emoji}</div>
+            <div class="task-info">
+              <div class="task-text">${task.text}</div>
+              <div class="task-timer ${isUrgent ? 'urgent' : ''}">
+                ⏰ ${timeLeft ? `${timeLeft.hours}ч ${timeLeft.minutes}м` : 'Время вышло!'}
+              </div>
+            </div>
+            <button class="task-btn" id="complete-task-btn">${task.action}</button>
+          </div>
+        ` : `
+          <div class="pet-happy">
+            <span>😊</span>
+            <span>Питомец доволен!</span>
+          </div>
+        `}
+        
+        <div class="pet-actions">
+          <button class="pet-action-btn" data-action="feed">🍎</button>
+          <button class="pet-action-btn" data-action="play">⚽</button>
+          <button class="pet-action-btn" data-action="sleep">😴</button>
+          <button class="pet-action-btn" data-action="pet">💕</button>
+        </div>
+        
+        <div class="pet-shop-buttons">
+          <button class="pet-shop-btn" id="open-shop-btn">🛒 Магазин</button>
+          <button class="pet-inventory-btn" id="open-inventory-btn">👕 Одежда</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Модалка редактирования питомца -->
+    <div class="modal" id="pet-edit-modal">
+      <div class="modal-content pet-edit-modal">
+        <div class="modal-header">
+          <h3>✏️ Редактировать питомца</h3>
+          <button class="modal-close" id="close-pet-edit">×</button>
+        </div>
+        
+        <div class="pet-edit-section">
+          <label>Имя питомца</label>
+          <input type="text" id="edit-pet-name" value="${pet.name}" placeholder="Введите имя">
+          <button class="btn btn-primary" id="save-pet-name">Сохранить имя</button>
+          <p class="edit-hint">Серия дней сохранится</p>
+        </div>
+        
+        <div class="pet-edit-divider">
+          <span>или</span>
+        </div>
+        
+        <div class="pet-edit-section">
+          <label>Сменить питомца</label>
+          <p class="edit-warning">⚠️ Серия дней обнулится!</p>
+          <div class="pet-select-grid-mini">
+            ${PET_ANIMALS.map(a => `
+              <div class="pet-select-item-mini ${a.id === pet.animalId ? 'current' : ''}" data-animal="${a.id}">
+                <span class="pet-select-emoji">${a.emoji}</span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn btn-secondary" id="change-pet-animal" disabled>Сменить питомца</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Модалка магазина -->
+    <div class="modal" id="pet-shop-modal">
+      <div class="modal-content pet-shop-modal">
+        <div class="modal-header">
+          <h3>🛒 Магазин</h3>
+          <div class="shop-balance">🌟 ${currentUser?.stickers || 0}</div>
+          <button class="modal-close" id="close-shop">×</button>
+        </div>
+        <div class="shop-tabs">
+          <button class="shop-tab active" data-type="hat">👒 Шапки</button>
+          <button class="shop-tab" data-type="scarf">🧣 Шарфы</button>
+          <button class="shop-tab" data-type="shoes">👟 Обувь</button>
+          <button class="shop-tab" data-type="accessory">✨ Другое</button>
+        </div>
+        <div class="shop-items" id="shop-items">
+          ${renderShopItems('hat', pet)}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Модалка инвентаря -->
+    <div class="modal" id="pet-inventory-modal">
+      <div class="modal-content pet-inventory-modal">
+        <div class="modal-header">
+          <h3>👕 Одежда питомца</h3>
+          <button class="modal-close" id="close-inventory">×</button>
+        </div>
+        <div class="inventory-current">
+          <p>Сейчас надето:</p>
+          <div class="current-outfit">
+            ${renderCurrentOutfit(pet)}
+          </div>
+        </div>
+        <div class="inventory-items" id="inventory-items">
+          ${renderInventoryItems(pet)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderShopItems(type, pet) {
+  const inventory = pet.inventory || [];
+  const items = PET_SHOP_ITEMS.filter(i => i.type === type);
+  
+  return items.map(item => {
+    const owned = inventory.includes(item.id);
+    return `
+      <div class="shop-item ${owned ? 'owned' : ''}" data-item-id="${item.id}">
+        <span class="shop-item-emoji">${item.emoji}</span>
+        <span class="shop-item-name">${item.name}</span>
+        <span class="shop-item-price">${owned ? '✓' : `🌟 ${item.price}`}</span>
+        ${!owned ? `<button class="shop-buy-btn" data-item-id="${item.id}">Купить</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCurrentOutfit(pet) {
+  const outfit = pet.outfit || {};
+  const slots = [
+    { type: 'hat', label: '👒 Шапка', id: outfit.hat },
+    { type: 'scarf', label: '🧣 Шарф', id: outfit.scarf },
+    { type: 'shoes', label: '👟 Обувь', id: outfit.shoes },
+    { type: 'accessory', label: '✨ Аксессуар', id: outfit.accessory }
+  ];
+  
+  return slots.map(slot => {
+    const item = slot.id ? PET_SHOP_ITEMS.find(i => i.id === slot.id) : null;
+    return `
+      <div class="outfit-slot">
+        <span class="slot-label">${slot.label}</span>
+        <span class="slot-item">${item ? item.emoji : '—'}</span>
+        ${item ? `<button class="slot-remove" data-type="${slot.type}">✕</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderInventoryItems(pet) {
+  const inventory = pet.inventory || [];
+  const outfit = pet.outfit || {};
+  
+  if (inventory.length === 0) {
+    return '<div class="empty-inventory">Пока ничего нет. Загляни в магазин! 🛒</div>';
+  }
+  
+  return inventory.map(itemId => {
+    const item = PET_SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item) return '';
+    const isWorn = outfit[item.type] === item.id;
+    return `
+      <div class="inventory-item ${isWorn ? 'worn' : ''}" data-item-id="${item.id}">
+        <span class="inv-item-emoji">${item.emoji}</span>
+        <span class="inv-item-name">${item.name}</span>
+        ${isWorn 
+          ? '<span class="inv-worn-badge">Надето</span>' 
+          : `<button class="inv-wear-btn" data-item-id="${item.id}" data-type="${item.type}">Надеть</button>`
+        }
+      </div>
+    `;
+  }).join('');
+}
+
+function getRandomPhrase(pet) {
+  // Показываем фразу с вероятностью 30%
+  if (Math.random() > 0.3) return null;
+  return PET_PHRASES[Math.floor(Math.random() * PET_PHRASES.length)];
+}
+
+function getTaskTimeLeft(task) {
+  if (!task || !task.deadline) return null;
+  const deadline = new Date(task.deadline).getTime();
+  const now = Date.now();
+  const diff = deadline - now;
+  
+  if (diff <= 0) return null;
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return { hours, minutes };
+}
+
+// Обновление таймера задачи питомца в реальном времени
+function updatePetTimer() {
+  const pet = getPetData();
+  if (!pet || !pet.currentTask) return;
+  
+  const timeLeft = getTaskTimeLeft(pet.currentTask);
+  const timerEl = document.querySelector('.task-timer');
+  const taskEl = document.querySelector('.pet-task');
+  
+  if (!timerEl) return;
+  
+  if (!timeLeft) {
+    // Время вышло - питомец погиб
+    timerEl.textContent = '⏰ Время вышло!';
+    timerEl.classList.add('urgent');
+    taskEl?.classList.add('urgent');
+    
+    // Обновляем данные с сервера
+    setTimeout(async () => {
+      currentUser = await api.get(`/api/user/${currentUser.tgId}`);
+      renderPage('pet');
+    }, 1000);
+    return;
+  }
+  
+  timerEl.textContent = `⏰ ${timeLeft.hours}ч ${timeLeft.minutes}м`;
+  
+  // Добавляем urgent класс если меньше часа
+  if (timeLeft.hours < 1) {
+    timerEl.classList.add('urgent');
+    taskEl?.classList.add('urgent');
+  }
+}
+
+let selectedPetId = null;
+let petTimerInterval = null;
+
+function setupPetEvents() {
+  // Очищаем предыдущий таймер если был
+  if (petTimerInterval) {
+    clearInterval(petTimerInterval);
+    petTimerInterval = null;
+  }
+  
+  // Запускаем обновление таймера каждую минуту
+  const pet = getPetData();
+  if (pet && pet.currentTask) {
+    updatePetTimer();
+    petTimerInterval = setInterval(updatePetTimer, 60000); // каждую минуту
+  }
+  
+  // Выбор питомца
+  document.querySelectorAll('.pet-select-item').forEach(el => {
+    el.onclick = () => {
+      document.querySelectorAll('.pet-select-item').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedPetId = el.dataset.petId;
+      document.querySelector('.pet-name-input').style.display = 'block';
+      document.getElementById('pet-name').focus();
+    };
+  });
+  
+  // Создание питомца
+  document.getElementById('create-pet-btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('pet-name').value.trim();
+    if (!selectedPetId) { showToast('Выбери питомца!'); return; }
+    if (!name) { showToast('Введи имя!'); return; }
+    
+    const pet = {
+      animalId: selectedPetId,
+      name: name,
+      createdAt: new Date().toISOString(),
+      streak: 0,
+      lastTaskDate: null,
+      currentTask: null,
+      isDead: false,
+      lastAction: null
+    };
+    
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    showToast(`${name} теперь твой друг! 🎉`);
+    renderPage('pet');
+  });
+  
+  // Выполнение задачи
+  document.getElementById('complete-task-btn')?.addEventListener('click', async () => {
+    const pet = getPetData();
+    if (!pet || !pet.currentTask) return;
+    
+    const task = PET_TASKS.find(t => t.id === pet.currentTask.taskId);
+    
+    // Сохраняем индекс выполненной задачи
+    const taskIndex = pet.currentTask.taskIndex ?? (pet.completedTasksToday || 0);
+    
+    // Обновляем данные питомца
+    pet.lastAction = { type: pet.currentTask.taskId, time: new Date().toISOString() };
+    pet.currentTask = null;
+    pet.completedTasksToday = taskIndex + 1; // Увеличиваем счётчик выполненных задач
+    
+    // Обновляем streak если это первая задача за день
+    const today = new Date().toDateString();
+    if (pet.lastTaskDate !== today) {
+      pet.streak = (pet.streak || 0) + 1;
+      pet.lastTaskDate = today;
+    }
+    
+    // Очищаем таймер
+    if (petTimerInterval) {
+      clearInterval(petTimerInterval);
+      petTimerInterval = null;
+    }
+    
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    
+    showToast(`${task?.action || 'Выполнено'}! 🎉`);
+    renderPage('pet');
+  });
+  
+  // Действия с питомцем (просто анимации)
+  document.querySelectorAll('.pet-action-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const action = btn.dataset.action;
+      const pet = getPetData();
+      if (!pet) return;
+      
+      pet.lastAction = { type: action, time: new Date().toISOString() };
+      currentUser.pet = pet;
+      
+      // Показываем анимацию
+      const avatar = document.getElementById('pet-avatar');
+      const stateEmojis = { feed: '😋', play: '🎉', sleep: '😴', wash: '✨', pet: '🥰', walk: '🏃' };
+      
+      // Добавляем класс анимации
+      avatar?.classList.add('pet-action-' + action);
+      
+      // Добавляем эмодзи состояния
+      let stateEl = avatar?.querySelector('.pet-state-emoji');
+      if (!stateEl && avatar) {
+        stateEl = document.createElement('span');
+        stateEl.className = 'pet-state-emoji';
+        avatar.appendChild(stateEl);
+      }
+      if (stateEl) {
+        stateEl.textContent = stateEmojis[action] || '💕';
+        stateEl.classList.add('show');
+      }
+      
+      // Убираем через 2.5 секунды с анимацией
+      setTimeout(() => {
+        avatar?.classList.remove('pet-action-' + action);
+        if (stateEl) {
+          stateEl.classList.add('hide');
+          setTimeout(() => {
+            stateEl.classList.remove('show', 'hide');
+            stateEl.textContent = '';
+          }, 300);
+        }
+      }, 2500);
+      
+      const messages = {
+        feed: 'Ням-ням! 😋',
+        play: 'Ура, играем! 🎉',
+        sleep: 'Баю-бай... 😴',
+        pet: 'Мур-мур! 🥰'
+      };
+      showToast(messages[action] || '💕');
+    };
+  });
+  
+  // Редактирование питомца
+  const editModal = document.getElementById('pet-edit-modal');
+  let selectedNewAnimal = null;
+  
+  document.getElementById('edit-pet-btn')?.addEventListener('click', () => {
+    editModal?.classList.add('active');
+    selectedNewAnimal = null;
+    document.querySelectorAll('.pet-select-item-mini').forEach(e => e.classList.remove('selected'));
+    document.getElementById('change-pet-animal').disabled = true;
+  });
+  
+  document.getElementById('close-pet-edit')?.addEventListener('click', () => {
+    editModal?.classList.remove('active');
+  });
+  
+  editModal?.addEventListener('click', (e) => {
+    if (e.target === editModal) editModal.classList.remove('active');
+  });
+  
+  // Сохранить имя (серия сохраняется)
+  document.getElementById('save-pet-name')?.addEventListener('click', async () => {
+    const newName = document.getElementById('edit-pet-name').value.trim();
+    if (!newName) { showToast('Введи имя!'); return; }
+    
+    const pet = getPetData();
+    if (!pet) return;
+    
+    pet.name = newName;
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    
+    editModal?.classList.remove('active');
+    showToast('Имя изменено! ✨');
+    renderPage('pet');
+  });
+  
+  // Выбор нового животного
+  document.querySelectorAll('.pet-select-item-mini').forEach(el => {
+    el.onclick = () => {
+      const pet = getPetData();
+      if (el.classList.contains('current')) return; // Нельзя выбрать текущего
+      
+      document.querySelectorAll('.pet-select-item-mini').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedNewAnimal = el.dataset.animal;
+      document.getElementById('change-pet-animal').disabled = false;
+    };
+  });
+  
+  // Сменить питомца (серия обнуляется)
+  document.getElementById('change-pet-animal')?.addEventListener('click', async () => {
+    if (!selectedNewAnimal) return;
+    
+    const pet = getPetData();
+    if (!pet) return;
+    
+    const animal = PET_ANIMALS.find(a => a.id === selectedNewAnimal);
+    
+    pet.animalId = selectedNewAnimal;
+    pet.streak = 0; // Обнуляем серию!
+    pet.lastTaskDate = null;
+    pet.tasksCompletedToday = 0;
+    
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    
+    editModal?.classList.remove('active');
+    showToast(`Теперь у тебя ${animal?.name || 'новый питомец'}! 🎉`);
+    renderPage('pet');
+  });
+  
+  // ===== МАГАЗИН =====
+  const shopModal = document.getElementById('pet-shop-modal');
+  const inventoryModal = document.getElementById('pet-inventory-modal');
+  
+  document.getElementById('open-shop-btn')?.addEventListener('click', () => {
+    shopModal?.classList.add('active');
+  });
+  
+  document.getElementById('close-shop')?.addEventListener('click', () => {
+    shopModal?.classList.remove('active');
+  });
+  
+  shopModal?.addEventListener('click', (e) => {
+    if (e.target === shopModal) shopModal.classList.remove('active');
+  });
+  
+  // Табы магазина
+  document.querySelectorAll('.shop-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const type = tab.dataset.type;
+      document.getElementById('shop-items').innerHTML = renderShopItems(type, getPetData());
+      setupShopBuyButtons();
+    };
+  });
+  
+  setupShopBuyButtons();
+  
+  // ===== ИНВЕНТАРЬ =====
+  document.getElementById('open-inventory-btn')?.addEventListener('click', () => {
+    // Обновляем содержимое инвентаря при открытии
+    const pet = getPetData();
+    if (pet) {
+      const inventoryEl = document.getElementById('inventory-items');
+      const currentOutfitEl = document.querySelector('.current-outfit');
+      if (inventoryEl) inventoryEl.innerHTML = renderInventoryItems(pet);
+      if (currentOutfitEl) currentOutfitEl.innerHTML = renderCurrentOutfit(pet);
+      setupInventoryButtons();
+    }
+    inventoryModal?.classList.add('active');
+  });
+  
+  document.getElementById('close-inventory')?.addEventListener('click', () => {
+    inventoryModal?.classList.remove('active');
+  });
+  
+  inventoryModal?.addEventListener('click', (e) => {
+    if (e.target === inventoryModal) inventoryModal.classList.remove('active');
+  });
+  
+  setupInventoryButtons();
+  
+  // Проверяем нужна ли новая задача
+  checkPetTask();
+}
+
+function setupShopBuyButtons() {
+  document.querySelectorAll('.shop-buy-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const itemId = btn.dataset.itemId;
+      const item = PET_SHOP_ITEMS.find(i => i.id === itemId);
+      if (!item) return;
+      
+      const stickers = currentUser?.stickers || 0;
+      if (stickers < item.price) {
+        showToast('Недостаточно наклеек! 😢');
+        return;
+      }
+      
+      const pet = getPetData();
+      if (!pet) return;
+      
+      // Добавляем в инвентарь
+      if (!pet.inventory) pet.inventory = [];
+      if (pet.inventory.includes(itemId)) {
+        showToast('Уже куплено!');
+        return;
+      }
+      
+      pet.inventory.push(itemId);
+      
+      // Списываем наклейки и увеличиваем счётчик потраченных
+      const newStickers = stickers - item.price;
+      const spentStickers = (currentUser.spentStickers || 0) + item.price;
+      
+      await api.put(`/api/user/${currentUser.tgId}`, { 
+        pet, 
+        stickers: newStickers,
+        spentStickers: spentStickers
+      });
+      currentUser.pet = pet;
+      currentUser.stickers = newStickers;
+      currentUser.spentStickers = spentStickers;
+      
+      showToast(`${item.emoji} ${item.name} куплено! 🎉`);
+      
+      // Обновляем UI магазина
+      document.querySelector('.shop-balance').textContent = `🌟 ${newStickers}`;
+      const activeTab = document.querySelector('.shop-tab.active');
+      document.getElementById('shop-items').innerHTML = renderShopItems(activeTab?.dataset.type || 'hat', pet);
+      setupShopBuyButtons();
+      
+      // Обновляем инвентарь
+      const inventoryEl = document.getElementById('inventory-items');
+      if (inventoryEl) {
+        inventoryEl.innerHTML = renderInventoryItems(pet);
+        setupInventoryButtons();
+      }
+      
+      // Обновляем текущую одежду в инвентаре
+      const currentOutfitEl = document.querySelector('.current-outfit');
+      if (currentOutfitEl) {
+        currentOutfitEl.innerHTML = renderCurrentOutfit(pet);
+        setupInventoryButtons();
+      }
+    };
+  });
+}
+
+function setupInventoryButtons() {
+  // Надеть вещь
+  document.querySelectorAll('.inv-wear-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const itemId = btn.dataset.itemId;
+      const type = btn.dataset.type;
+      const pet = getPetData();
+      if (!pet) return;
+      
+      if (!pet.outfit) pet.outfit = {};
+      pet.outfit[type] = itemId;
+      
+      await api.put(`/api/user/${currentUser.tgId}`, { pet });
+      currentUser.pet = pet;
+      
+      showToast('Надето! 👕');
+      renderPage('pet');
+    };
+  });
+  
+  // Снять вещь
+  document.querySelectorAll('.slot-remove').forEach(btn => {
+    btn.onclick = async () => {
+      const type = btn.dataset.type;
+      const pet = getPetData();
+      if (!pet || !pet.outfit) return;
+      
+      delete pet.outfit[type];
+      
+      await api.put(`/api/user/${currentUser.tgId}`, { pet });
+      currentUser.pet = pet;
+      
+      showToast('Снято!');
+      renderPage('pet');
+    };
+  });
+}
+
+async function checkPetTask() {
+  // Задачи теперь генерируются на сервере при каждом запросе /api/user
+  // Здесь только проверяем не истекла ли задача на клиенте
+  const pet = getPetData();
+  if (!pet || pet.isDead) return;
+  
+  if (pet.currentTask) {
+    const timeLeft = getTaskTimeLeft(pet.currentTask);
+    if (!timeLeft) {
+      // Обновляем данные с сервера (там питомец уже помечен как мёртвый)
+      currentUser = await api.get(`/api/user/${currentUser.tgId}`);
+      if (currentUser?.pet?.isDead) {
+        showToast('😢 Твой питомец погиб...');
+        renderPage('pet');
+      }
+    }
+  }
+}
+
+function renderDiary() {
+  const u = currentUser || {};
+  return `
+    <div class="diary-page">
+      <div class="profile-card">
+        ${u.photo ? `<img src="${u.photo}" class="profile-photo">` : `<div class="profile-photo placeholder">👤</div>`}
+        <div class="profile-name">${u.firstName || ''} ${u.lastName || ''}</div>
+        ${u.username ? `<div class="profile-username">@${u.username}</div>` : '<div style="height:20px"></div>'}
+        <div class="stats-row">
+          <div class="stat-box stickers">
+            <div class="value">${u.stickers || 0}</div>
+            <div class="label">Наклеек</div>
+          </div>
+          <div class="stat-box absences">
+            <div class="value">${u.absences || 0}</div>
+            <div class="label">Пропусков</div>
+          </div>
+        </div>
+        <div class="birthday-box">
+          <span class="emoji">🎂</span>
+          <span>${u.birthDate || 'Не указана'}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+function renderSettings() {
+  const u = currentUser || {};
+  const bp = (u.birthDate || '..').split('.');
+  return `
+    <div class="settings-page">
+      <h2>⚙️ Настройки</h2>
+      
+      <div class="settings-card">
+        <div class="setting-item">
+          <label>Тёмная тема</label>
+          <div class="toggle ${u.theme === 'dark' ? 'active' : ''}" id="theme-toggle"></div>
+        </div>
+      </div>
+      
+      <div class="section-header">Личные данные</div>
+      <div class="edit-form">
+        <form id="edit-form">
+          <input type="text" id="e-fn" value="${u.firstName || ''}" placeholder="Имя">
+          <input type="text" id="e-ln" value="${u.lastName || ''}" placeholder="Фамилия">
+          <label>Дата рождения</label>
+          <div class="date-row">
+            <input type="number" id="e-d" value="${bp[0] || ''}" placeholder="Д">
+            <input type="number" id="e-m" value="${bp[1] || ''}" placeholder="М">
+            <input type="number" id="e-y" value="${bp[2] || ''}" placeholder="Г">
+          </div>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+      </div>
+      
+      <button class="admin-btn" id="admin-btn">
+        🔐 ${u.isAdmin ? 'Админ панель' : 'Войти как админ'}
+      </button>
+    </div>
+    
+    <div class="admin-panel" id="admin-panel"></div>
+    
+    <div class="modal" id="pwd-modal">
+      <div class="modal-content">
+        <h3>🔐 Пароль администратора</h3>
+        <form id="pwd-form">
+          <input type="password" id="pwd" placeholder="Введите пароль">
+          <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary" id="close-pwd">Отмена</button>
+            <button type="submit" class="btn btn-primary">Войти</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function setupSettingsEvents() {
+  document.getElementById('theme-toggle')?.addEventListener('click', async function() {
+    this.classList.toggle('active');
+    const dark = this.classList.contains('active');
+    document.body.classList.toggle('dark', dark);
+    if (currentUser) {
+      await api.put(`/api/user/${currentUser.tgId}`, { theme: dark ? 'dark' : 'light' });
+      currentUser.theme = dark ? 'dark' : 'light';
+    }
+  });
+  
+  document.getElementById('edit-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+      firstName: document.getElementById('e-fn').value,
+      lastName: document.getElementById('e-ln').value,
+      birthDate: `${document.getElementById('e-d').value}.${document.getElementById('e-m').value}.${document.getElementById('e-y').value}`
+    };
+    await api.put(`/api/user/${currentUser.tgId}`, data);
+    currentUser = { ...currentUser, ...data };
+    showToast('Сохранено ✓');
+  });
+  
+  document.getElementById('admin-btn')?.addEventListener('click', () => {
+    if (currentUser?.isAdmin) openAdmin();
+    else document.getElementById('pwd-modal').classList.add('active');
+  });
+  
+  document.getElementById('close-pwd')?.addEventListener('click', () => {
+    document.getElementById('pwd-modal').classList.remove('active');
+  });
+  
+  document.getElementById('pwd-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (document.getElementById('pwd').value === 'login12AsXristian') {
+      await api.put(`/api/user/${currentUser.tgId}`, { isAdmin: true });
+      currentUser.isAdmin = true;
+      document.getElementById('pwd-modal').classList.remove('active');
+      openAdmin();
+      showToast('Добро пожаловать, админ! 👑');
+    } else showToast('Неверный пароль');
+  });
+}
+
+
+// === АДМИН ===
+let selectedUser = null;
+let adminTab = 'users';
+
+async function openAdmin() {
+  allUsers = await api.get('/api/users');
+  topics = await api.get('/api/topics');
+  homework = await api.get('/api/homework');
+  submissions = await api.get('/api/submissions');
+  settings = await api.get('/api/settings');
+  
+  document.getElementById('admin-panel').classList.add('active');
+  renderAdmin();
+}
+
+function closeAdmin() {
+  document.getElementById('admin-panel').classList.remove('active');
+  selectedUser = null;
+}
+
+function renderAdmin() {
+  const p = document.getElementById('admin-panel');
+  p.innerHTML = `
+    <div class="admin-header">
+      <h2>👑 Админ панель</h2>
+      <button class="close-btn" id="close-admin">✕</button>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab ${adminTab === 'users' ? 'active' : ''}" data-tab="users">👥 Люди</button>
+      <button class="admin-tab ${adminTab === 'topics' ? 'active' : ''}" data-tab="topics">📚 Темы</button>
+      <button class="admin-tab ${adminTab === 'homework' ? 'active' : ''}" data-tab="homework">📝 ДЗ</button>
+      <button class="admin-tab ${adminTab === 'submissions' ? 'active' : ''}" data-tab="submissions">📥 Заявки</button>
+      <button class="admin-tab ${adminTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙️</button>
+    </div>
+    <div class="admin-content" id="admin-content">${renderAdminContent()}</div>
+  `;
+  setupAdminEvents();
+}
+
+function renderAdminContent() {
+  switch(adminTab) {
+    case 'users': return renderUsers();
+    case 'topics': return renderAdminTopics();
+    case 'homework': return renderAdminHW();
+    case 'submissions': return renderSubmissions();
+    case 'settings': return renderAdminSettings();
+  }
+}
+
+function setupAdminEvents() {
+  document.getElementById('close-admin')?.addEventListener('click', closeAdmin);
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.onclick = () => { adminTab = t.dataset.tab; renderAdmin(); };
+  });
+  
+  switch(adminTab) {
+    case 'users': setupUserEvents(); break;
+    case 'topics': setupTopicEvents(); break;
+    case 'homework': setupHWEvents(); break;
+    case 'submissions': setupSubmissionEvents(); break;
+    case 'settings': setupAdminSettingsEvents(); break;
+  }
+}
+
+// Пользователи
+function renderUsers() {
+  return `
+    <div class="user-list">
+      ${(allUsers || []).map(u => `
+        <div class="user-item ${u.isBlocked ? 'blocked' : ''} ${selectedUser === u.tgId ? 'selected' : ''}" data-id="${u.tgId}">
+          ${u.photo ? `<img src="${u.photo}">` : `<div class="user-avatar-placeholder">👤</div>`}
+          <div class="user-info">
+            <div class="user-name">${u.firstName || ''} ${u.lastName || ''} ${u.isBlocked ? '<span class="blocked-badge">БАН</span>' : ''}</div>
+            <div class="user-id">${u.tgId} ${u.username ? `@${u.username}` : ''}</div>
+          </div>
+          <div class="user-stats">🏷️${u.stickers || 0} ❌${u.absences || 0}</div>
+        </div>
+      `).join('') || '<div class="empty-state"><p>Нет пользователей</p></div>'}
+    </div>
+    <div class="id-input"><input type="text" id="uid" placeholder="ID пользователя" value="${selectedUser || ''}"></div>
+    <div class="action-grid">
+      <button class="action-btn add" data-act="addS">+🏷️</button>
+      <button class="action-btn remove" data-act="remS">-🏷️</button>
+      <button class="action-btn add" data-act="addA">+❌</button>
+      <button class="action-btn remove" data-act="remA">-❌</button>
+      <button class="action-btn ${selectedUser && allUsers.find(u => String(u.tgId) === String(selectedUser))?.isBlocked ? 'add' : 'remove'}" data-act="block">
+        ${selectedUser && allUsers.find(u => String(u.tgId) === String(selectedUser))?.isBlocked ? '✓Разбан' : '🚫Бан'}
+      </button>
+    </div>
+  `;
+}
+
+function setupUserEvents() {
+  document.querySelectorAll('.user-item').forEach(el => {
+    el.onclick = () => {
+      selectedUser = el.dataset.id;
+      document.getElementById('uid').value = selectedUser;
+      document.querySelectorAll('.user-item').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      const user = allUsers.find(u => String(u.tgId) === String(selectedUser));
+      const banBtn = document.querySelector('[data-act="block"]');
+      if (banBtn && user) {
+        banBtn.textContent = user.isBlocked ? '✓Разбан' : '🚫Бан';
+        banBtn.className = `action-btn ${user.isBlocked ? 'add' : 'remove'}`;
+      }
+    };
+  });
+  
+  document.querySelectorAll('[data-act]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = document.getElementById('uid')?.value || selectedUser;
+      if (!id) { showToast('Выберите пользователя'); return; }
+      const user = allUsers.find(u => String(u.tgId) === String(id));
+      if (!user) { showToast('Не найден'); return; }
+      
+      let upd = {};
+      switch(btn.dataset.act) {
+        case 'addS': upd.stickers = (user.stickers || 0) + 1; break;
+        case 'remS': upd.stickers = Math.max(0, (user.stickers || 0) - 1); break;
+        case 'addA': upd.absences = (user.absences || 0) + 1; break;
+        case 'remA': upd.absences = Math.max(0, (user.absences || 0) - 1); break;
+        case 'block': upd.isBlocked = !user.isBlocked; break;
+      }
+      
+      await api.put(`/api/user/${id}`, upd);
+      allUsers = await api.get('/api/users');
+      if (id === currentUser?.tgId) currentUser = { ...currentUser, ...upd };
+      document.getElementById('admin-content').innerHTML = renderUsers();
+      setupUserEvents();
+      showToast('Обновлено ✓');
+    };
+  });
+}
+
+
+// Темы
+function renderAdminTopics() {
+  return `
+    <button class="btn btn-primary" id="add-topic-btn" style="margin-bottom:16px">+ Добавить тему</button>
+    ${(topics || []).map(t => `
+      <div class="topic-card">
+        <h4>${t.title} ${t.isHidden ? '👁️‍🗨️' : ''} ${t.isCurrent ? '🔵' : ''}</h4>
+        <div class="date">📅 ${t.date}</div>
+        <div class="action-grid" style="margin-top:10px">
+          <button class="action-btn edit" data-tid="${t.id}" data-tact="cur">${t.isCurrent ? '→Прошла' : '→Текущая'}</button>
+          <button class="action-btn ${t.isHidden ? 'add' : 'remove'}" data-tid="${t.id}" data-tact="hide">${t.isHidden ? 'Показать' : 'Скрыть'}</button>
+          <button class="action-btn remove" data-tid="${t.id}" data-tact="del">Удалить</button>
+        </div>
+      </div>
+    `).join('') || '<div class="empty-state"><p>Нет тем</p></div>'}
+    <div class="modal" id="topic-modal">
+      <div class="modal-content">
+        <h3>📚 Новая тема</h3>
+        <form id="topic-form">
+          <input type="text" id="t-title" placeholder="Название" required>
+          <input type="date" id="t-date" required>
+          <textarea id="t-desc" placeholder="Описание" rows="2"></textarea>
+          <label class="checkbox-label">
+            <input type="checkbox" id="t-cur" class="checkbox-input"> 
+            <span class="checkbox-text">Текущая тема</span>
+          </label>
+          <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary" id="close-t-modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function setupTopicEvents() {
+  document.getElementById('add-topic-btn')?.addEventListener('click', () => {
+    document.getElementById('topic-modal').classList.add('active');
+  });
+  document.getElementById('close-t-modal')?.addEventListener('click', () => {
+    document.getElementById('topic-modal').classList.remove('active');
+  });
+  document.getElementById('topic-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await api.post('/api/topics', {
+      title: document.getElementById('t-title').value,
+      date: document.getElementById('t-date').value,
+      description: document.getElementById('t-desc').value,
+      isCurrent: document.getElementById('t-cur').checked
+    });
+    topics = await api.get('/api/topics');
+    document.getElementById('topic-modal').classList.remove('active');
+    document.getElementById('admin-content').innerHTML = renderAdminTopics();
+    setupTopicEvents();
+    showToast('Добавлено ✓');
+  });
+  
+  document.querySelectorAll('[data-tact]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.tid;
+      const t = topics.find(x => x.id === id);
+      if (btn.dataset.tact === 'cur') await api.put(`/api/topics/${id}`, { isCurrent: !t.isCurrent });
+      else if (btn.dataset.tact === 'hide') await api.put(`/api/topics/${id}`, { isHidden: !t.isHidden });
+      else if (btn.dataset.tact === 'del') { if (!confirm('Удалить?')) return; await api.delete(`/api/topics/${id}`); }
+      topics = await api.get('/api/topics');
+      document.getElementById('admin-content').innerHTML = renderAdminTopics();
+      setupTopicEvents();
+    };
+  });
+}
+
+// ДЗ
+let currentHWId = null;
+
+function renderAdminHW() {
+  const now = new Date();
+  const currentHW = (homework || []).filter(h => new Date(h.dueDate) >= now);
+  const pastHW = (homework || []).filter(h => new Date(h.dueDate) < now);
+  
+  const renderHWCard = (h) => {
+    const isPast = new Date(h.dueDate) < now;
+    return `
+      <div class="homework-card ${isPast ? 'past-hw' : ''}">
+        <h4>${h.title} ${h.isHidden ? '👁️‍🗨️' : ''} ${isPast ? '⏰' : ''}</h4>
+        <div class="date">📅 ${h.dueDate} | ✅ ${(h.completedBy || []).length}</div>
+        <div class="action-grid" style="margin-top:10px">
+          <button class="action-btn edit" data-hid="${h.id}" data-hact="mark">Отметить</button>
+          ${!isPast ? `<button class="action-btn edit" data-hid="${h.id}" data-hact="past" style="background:#e17055">⏰ Прошло</button>` : ''}
+          <button class="action-btn ${h.isHidden ? 'add' : 'remove'}" data-hid="${h.id}" data-hact="hide">${h.isHidden ? 'Показать' : 'Скрыть'}</button>
+          <button class="action-btn remove" data-hid="${h.id}" data-hact="del">Удалить</button>
+        </div>
+      </div>
+    `;
+  };
+  
+  return `
+    <button class="btn btn-primary" id="add-hw-btn" style="margin-bottom:16px">+ Добавить ДЗ</button>
+    
+    ${currentHW.length ? `<div class="hw-section-title">📝 Текущие (${currentHW.length})</div>` : ''}
+    ${currentHW.map(renderHWCard).join('')}
+    
+    ${pastHW.length ? `<div class="hw-section-title" style="margin-top:20px">⏰ Прошедшие (${pastHW.length})</div>` : ''}
+    ${pastHW.map(renderHWCard).join('')}
+    
+    ${!homework?.length ? '<div class="empty-state"><p>Нет ДЗ</p></div>' : ''}
+    <div class="modal" id="hw-modal">
+      <div class="modal-content">
+        <h3>📝 Новое ДЗ</h3>
+        <form id="hw-form">
+          <input type="text" id="hw-title" placeholder="Название" required>
+          <input type="date" id="hw-date" required>
+          <textarea id="hw-desc" placeholder="Описание" rows="2"></textarea>
+          <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary" id="close-hw-modal">Отмена</button>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="modal" id="mark-modal">
+      <div class="modal-content">
+        <h3>✅ Отметить выполнение</h3>
+        <div id="mark-list" class="user-list"></div>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="close-mark">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+function setupHWEvents() {
+  document.getElementById('add-hw-btn')?.addEventListener('click', () => {
+    document.getElementById('hw-modal').classList.add('active');
+  });
+  document.getElementById('close-hw-modal')?.addEventListener('click', () => {
+    document.getElementById('hw-modal').classList.remove('active');
+  });
+  document.getElementById('close-mark')?.addEventListener('click', () => {
+    document.getElementById('mark-modal').classList.remove('active');
+  });
+  
+  document.getElementById('hw-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await api.post('/api/homework', {
+      title: document.getElementById('hw-title').value,
+      dueDate: document.getElementById('hw-date').value,
+      description: document.getElementById('hw-desc').value
+    });
+    homework = await api.get('/api/homework');
+    document.getElementById('hw-modal').classList.remove('active');
+    document.getElementById('admin-content').innerHTML = renderAdminHW();
+    setupHWEvents();
+    showToast('Добавлено ✓');
+  });
+  
+  document.querySelectorAll('[data-hact]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.dataset.hid;
+      const h = homework.find(x => x.id === id);
+      if (btn.dataset.hact === 'mark') { currentHWId = id; showMarkModal(); return; }
+      if (btn.dataset.hact === 'hide') await api.put(`/api/homework/${id}`, { isHidden: !h.isHidden });
+      else if (btn.dataset.hact === 'past') {
+        // Устанавливаем дату на вчера чтобы сделать ДЗ прошедшим
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        await api.put(`/api/homework/${id}`, { dueDate: yesterday.toISOString().split('T')[0] });
+        showToast('ДЗ перемещено в прошедшие');
+      }
+      else if (btn.dataset.hact === 'del') { if (!confirm('Удалить?')) return; await api.delete(`/api/homework/${id}`); }
+      homework = await api.get('/api/homework');
+      document.getElementById('admin-content').innerHTML = renderAdminHW();
+      setupHWEvents();
+    };
+  });
+}
+
+function showMarkModal() {
+  const h = homework.find(x => x.id === currentHWId);
+  const list = document.getElementById('mark-list');
+  list.innerHTML = (allUsers || []).map(u => {
+    const done = (h.completedBy || []).includes(u.tgId);
+    return `
+      <div class="user-item ${done ? 'selected' : ''}" data-mark-uid="${u.tgId}">
+        ${u.photo ? `<img src="${u.photo}">` : `<div class="user-avatar-placeholder">👤</div>`}
+        <div class="user-info"><div class="user-name">${u.firstName || ''} ${u.lastName || ''}</div></div>
+        <div style="font-size:20px">${done ? '✅' : '⬜'}</div>
+      </div>
+    `;
+  }).join('');
+  
+  document.querySelectorAll('[data-mark-uid]').forEach(el => {
+    el.onclick = async () => {
+      const uid = el.dataset.markUid;
+      const hw = homework.find(x => x.id === currentHWId);
+      let cb = [...(hw.completedBy || [])];
+      if (cb.includes(uid)) cb = cb.filter(x => x !== uid);
+      else cb.push(uid);
+      await api.put(`/api/homework/${currentHWId}`, { completedBy: cb });
+      homework = await api.get('/api/homework');
+      showMarkModal();
+    };
+  });
+  
+  document.getElementById('mark-modal').classList.add('active');
+}
+
+// Заявки на проверку ДЗ
+function renderSubmissions() {
+  const pending = (submissions || []).filter(s => s.status === 'pending');
+  const processed = (submissions || []).filter(s => s.status !== 'pending');
+  
+  return `
+    <div class="submissions-tabs">
+      <button class="sub-tab active" data-sub="pending">⏳ Ожидают (${pending.length})</button>
+      <button class="sub-tab" data-sub="processed">✅ Обработанные</button>
+    </div>
+    <div id="pending-subs" class="sub-content active">
+      ${pending.length ? pending.map(s => renderSubmissionCard(s)).join('') : '<div class="empty-state"><div class="icon">📭</div><p>Нет заявок</p></div>'}
+    </div>
+    <div id="processed-subs" class="sub-content">
+      ${processed.length ? processed.map(s => renderSubmissionCard(s, true)).join('') : '<div class="empty-state"><div class="icon">📭</div><p>Нет обработанных</p></div>'}
+    </div>
+    
+    <!-- Модалка просмотра заявки -->
+    <div class="modal" id="view-sub-modal">
+      <div class="modal-content" style="max-width:400px">
+        <h3>📋 Заявка на проверку</h3>
+        <div id="sub-detail"></div>
+      </div>
+    </div>
+    
+    <!-- Модалка отклонения -->
+    <div class="modal" id="reject-modal">
+      <div class="modal-content">
+        <h3>❌ Отклонить заявку</h3>
+        <form id="reject-form">
+          <textarea id="reject-reason" placeholder="Причина отклонения" rows="3" required></textarea>
+          <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary" id="close-reject">Отмена</button>
+            <button type="submit" class="btn btn-primary" style="background:var(--danger)">Отклонить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderSubmissionCard(s, isProcessed = false) {
+  const statusIcon = s.status === 'approved' ? '✅' : s.status === 'rejected' ? '❌' : '⏳';
+  const date = new Date(s.submittedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const mediaCount = s.media?.length || (s.photo ? 1 : 0);
+  const hasVideo = s.media?.some(m => m.type === 'video');
+  
+  return `
+    <div class="submission-card ${s.status}" data-sub-id="${s.id}">
+      <div class="sub-header">
+        <div class="sub-user">
+          <strong>${s.userName || 'Без имени'}</strong>
+          <span class="sub-date">${date}</span>
+        </div>
+        <span class="sub-status">${statusIcon}</span>
+      </div>
+      <div class="sub-hw">📝 ${s.hwTitle || 'ДЗ'}</div>
+      ${mediaCount > 0 ? `<div class="sub-has-photo">${hasVideo ? '🎬' : '📷'} ${mediaCount} файл(ов)</div>` : ''}
+      ${s.comment ? `<div class="sub-comment">"${s.comment.substring(0, 50)}${s.comment.length > 50 ? '...' : ''}"</div>` : ''}
+      ${!isProcessed ? `
+        <div class="sub-actions">
+          <button class="action-btn add" data-sub-act="approve" data-sid="${s.id}">✅ Принять</button>
+          <button class="action-btn remove" data-sub-act="reject" data-sid="${s.id}">❌ Отклонить</button>
+          <button class="action-btn edit" data-sub-act="view" data-sid="${s.id}">👁️</button>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+let currentSubId = null;
+
+function setupSubmissionEvents() {
+  // Табы
+  document.querySelectorAll('.sub-tab').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(btn.dataset.sub === 'pending' ? 'pending-subs' : 'processed-subs')?.classList.add('active');
+    };
+  });
+  
+  // Действия с заявками
+  document.querySelectorAll('[data-sub-act]').forEach(btn => {
+    btn.onclick = async () => {
+      const sid = btn.dataset.sid;
+      const sub = submissions.find(s => s.id === sid);
+      if (!sub) return;
+      
+      if (btn.dataset.subAct === 'view') {
+        showSubmissionDetail(sub);
+      } else if (btn.dataset.subAct === 'approve') {
+        await approveSubmission(sub);
+      } else if (btn.dataset.subAct === 'reject') {
+        currentSubId = sid;
+        document.getElementById('reject-modal').classList.add('active');
+      }
+    };
+  });
+  
+  // Закрыть модалку отклонения
+  document.getElementById('close-reject')?.addEventListener('click', () => {
+    document.getElementById('reject-modal').classList.remove('active');
+  });
+  
+  // Форма отклонения
+  document.getElementById('reject-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const reason = document.getElementById('reject-reason').value;
+    await rejectSubmission(currentSubId, reason);
+    document.getElementById('reject-modal').classList.remove('active');
+  });
+}
+
+function showSubmissionDetail(sub) {
+  const detail = document.getElementById('sub-detail');
+  const date = new Date(sub.submittedAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  
+  // Поддержка URL (новый формат) и base64 (старый формат)
+  let mediaHtml = '';
+  if (sub.media && sub.media.length > 0) {
+    mediaHtml = `<div class="sub-media-gallery">${sub.media.map(m => {
+      // m.url для нового формата, m.data для старого
+      const src = m.url || m.data;
+      if (m.type === 'video') {
+        return `<div class="gallery-item video"><video src="${src}" controls></video></div>`;
+      }
+      return `<div class="gallery-item"><img src="${src}" alt="Фото"></div>`;
+    }).join('')}</div>`;
+  } else if (sub.photo) {
+    mediaHtml = `<div class="sub-photo-full"><img src="${sub.photo}" alt="Фото работы"></div>`;
+  } else {
+    mediaHtml = '<p style="color:var(--text-light);text-align:center">Файлы не прикреплены</p>';
+  }
+  
+  detail.innerHTML = `
+    <div class="sub-detail-info">
+      <p><strong>👤 От:</strong> ${sub.userName}</p>
+      <p><strong>📝 ДЗ:</strong> ${sub.hwTitle}</p>
+      <p><strong>📅 Дата:</strong> ${date}</p>
+      ${sub.comment ? `<p><strong>💬 Комментарий:</strong> ${sub.comment}</p>` : ''}
+    </div>
+    ${mediaHtml}
+    <div class="modal-buttons" style="margin-top:20px">
+      <button class="btn btn-secondary" onclick="document.getElementById('view-sub-modal').classList.remove('active')">Закрыть</button>
+    </div>
+  `;
+  
+  document.getElementById('view-sub-modal').classList.add('active');
+}
+
+async function approveSubmission(sub) {
+  // Обновляем статус заявки
+  await api.put(`/api/submissions/${sub.id}`, { status: 'approved' });
+  
+  // Отмечаем ДЗ как выполненное
+  const hw = homework.find(h => h.id === sub.hwId);
+  if (hw) {
+    const completedBy = [...(hw.completedBy || [])];
+    if (!completedBy.includes(sub.tgId)) {
+      completedBy.push(sub.tgId);
+      await api.put(`/api/homework/${sub.hwId}`, { completedBy });
+    }
+  }
+  
+  // Обновляем данные
+  submissions = await api.get('/api/submissions');
+  homework = await api.get('/api/homework');
+  document.getElementById('admin-content').innerHTML = renderSubmissions();
+  setupSubmissionEvents();
+  showToast('Заявка принята ✅');
+}
+
+async function rejectSubmission(subId, reason) {
+  await api.put(`/api/submissions/${subId}`, { status: 'rejected', rejectReason: reason });
+  submissions = await api.get('/api/submissions');
+  document.getElementById('admin-content').innerHTML = renderSubmissions();
+  setupSubmissionEvents();
+  showToast('Заявка отклонена');
+}
+
+// Настройки админа
+function renderAdminSettings() {
+  return `
+    <form id="admin-set-form">
+      <label>Username админа (для уведомлений)</label>
+      <input type="text" id="a-user" value="${settings.adminUsername || ''}" placeholder="@username">
+      <label>Наклеек до подарка</label>
+      <input type="number" id="a-gift" value="${settings.giftThreshold || 5}" min="1">
+      <button type="submit" class="btn btn-primary" style="margin-top:10px">Сохранить</button>
+    </form>
+  `;
+}
+
+function setupAdminSettingsEvents() {
+  document.getElementById('admin-set-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await api.put('/api/settings', {
+      adminUsername: document.getElementById('a-user').value,
+      giftThreshold: parseInt(document.getElementById('a-gift').value) || 5
+    });
+    settings = await api.get('/api/settings');
+    showToast('Сохранено ✓');
+  });
+}
+
+// Запуск
+document.addEventListener('DOMContentLoaded', init);

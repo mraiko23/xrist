@@ -201,7 +201,6 @@ function renderProgress() {
   const spentStickers = currentUser?.spentStickers || 0;
   const earnedStickers = stickers + spentStickers; // Всего заработано
   const claimedGifts = currentUser?.claimedGifts || 0; // Сколько подарков уже получено
-  const lastAcknowledgedGift = currentUser?.lastAcknowledgedGift || 0; // Последний подтверждённый подарок
   const threshold = settings.giftThreshold || 5;
   
   // Сколько подарков заслужено (по заработанным наклейкам)
@@ -209,7 +208,18 @@ function renderProgress() {
   // Можно ли получить новый подарок
   const canClaimGift = deservedGifts > claimedGifts;
   
-  // Показать полноэкранный модал если есть новый подарок который ещё не подтверждён
+  // Если lastAcknowledgedGift не установлен - инициализируем текущим значением
+  // чтобы не показывать модал для старых подарков
+  let lastAcknowledgedGift = currentUser?.lastAcknowledgedGift;
+  if (lastAcknowledgedGift === undefined || lastAcknowledgedGift === null) {
+    // Первый раз - устанавливаем равным текущим заслуженным подаркам
+    lastAcknowledgedGift = deservedGifts;
+    currentUser.lastAcknowledgedGift = deservedGifts;
+    // Сохраняем в фоне
+    api.put(`/api/user/${currentUser.tgId}`, { lastAcknowledgedGift: deservedGifts });
+  }
+  
+  // Показать полноэкранный модал только если есть НОВЫЙ подарок
   const showGiftModal = deservedGifts > lastAcknowledgedGift;
   
   // До следующего подарка считаем от заработанных
@@ -218,7 +228,7 @@ function renderProgress() {
   // Начальное количество шагов (показываем по заработанным)
   loadedSteps = Math.max(earnedStickers + 10, 20);
 
-  // Показываем модал после рендера
+  // Показываем модал после рендера только для новых подарков
   if (showGiftModal) {
     setTimeout(() => showGiftCelebrationModal(deservedGifts), 300);
   }

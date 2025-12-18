@@ -15,6 +15,9 @@ const api = {
   async get(url) { 
     try {
       const res = await fetch(url);
+      if (!res.ok) {
+        return { error: `HTTP ${res.status}` };
+      }
       return res.json();
     } catch (e) {
       console.error('API GET error:', e);
@@ -28,6 +31,11 @@ const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API POST failed:', res.status, text);
+        return { error: `Ошибка сервера (${res.status})` };
+      }
       return res.json();
     } catch (e) {
       console.error('API POST error:', e);
@@ -41,6 +49,9 @@ const api = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      if (!res.ok) {
+        return { error: `HTTP ${res.status}` };
+      }
       return res.json();
     } catch (e) {
       console.error('API PUT error:', e);
@@ -169,6 +180,7 @@ function renderPage(page) {
   switch(page) {
     case 'progress': c.innerHTML = renderProgress(); setupInfiniteRoad(); break;
     case 'topics': c.innerHTML = renderTopics(); setupTabs(); break;
+    case 'pet': c.innerHTML = renderPet(); setupPetEvents(); break;
     case 'diary': c.innerHTML = renderDiary(); break;
     case 'settings': c.innerHTML = renderSettings(); setupSettingsEvents(); break;
   }
@@ -600,7 +612,7 @@ function showHWDetail(id) {
         }
       } catch (err) {
         console.error('Submit error:', err);
-        showToast('Ошибка при отправке. Попробуйте файлы меньшего размера.');
+        showToast('Ошибка: ' + (err.message || 'Неизвестная ошибка'));
       } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
@@ -611,6 +623,336 @@ function showHWDetail(id) {
 
 function closeDetailModal() {
   document.getElementById('detail-modal')?.classList.remove('active');
+}
+
+// ===== ПИТОМЕЦ (ТАМАГОЧИ) =====
+const PET_ANIMALS = [
+  { id: 'elephant', emoji: '🐘', name: 'Слонёнок' },
+  { id: 'cat', emoji: '🐱', name: 'Котёнок' },
+  { id: 'dog', emoji: '🐶', name: 'Щенок' },
+  { id: 'rabbit', emoji: '🐰', name: 'Зайчик' },
+  { id: 'bear', emoji: '🐻', name: 'Мишка' },
+  { id: 'panda', emoji: '🐼', name: 'Панда' },
+  { id: 'fox', emoji: '🦊', name: 'Лисёнок' },
+  { id: 'lion', emoji: '🦁', name: 'Львёнок' },
+  { id: 'monkey', emoji: '🐵', name: 'Обезьянка' },
+  { id: 'penguin', emoji: '🐧', name: 'Пингвин' },
+  { id: 'chick', emoji: '🐥', name: 'Цыплёнок' },
+  { id: 'frog', emoji: '🐸', name: 'Лягушонок' }
+];
+
+const PET_TASKS = [
+  { id: 'feed', emoji: '🍎', text: 'Покорми меня!', action: 'Покормить' },
+  { id: 'play', emoji: '⚽', text: 'Поиграй со мной!', action: 'Поиграть' },
+  { id: 'sleep', emoji: '😴', text: 'Уложи меня спать!', action: 'Уложить' },
+  { id: 'wash', emoji: '🛁', text: 'Помой меня!', action: 'Помыть' },
+  { id: 'pet', emoji: '💕', text: 'Погладь меня!', action: 'Погладить' },
+  { id: 'walk', emoji: '🚶', text: 'Погуляй со мной!', action: 'Погулять' }
+];
+
+const PET_PHRASES = [
+  '💭 Как дела?',
+  '💭 Ты мой лучший друг!',
+  '💭 Мне так хорошо с тобой!',
+  '💭 Давай играть!',
+  '💭 Я тебя люблю!',
+  '💭 Ты самый лучший!',
+  '💭 Мур-мур...',
+  '💭 Хочу обнимашки!',
+  '💭 Ты сегодня красивый!',
+  '💭 Скучал по тебе!',
+  '💭 Ура, ты пришёл!',
+  '💭 Давай веселиться!',
+  '💭 Ты мой герой!',
+  '💭 Спасибо что заботишься!',
+  '💭 Мне повезло с тобой!'
+];
+
+function getPetData() {
+  return currentUser?.pet || null;
+}
+
+function renderPet() {
+  const pet = getPetData();
+  
+  if (!pet || pet.isDead) {
+    return renderPetCreate(pet?.isDead);
+  }
+  
+  return renderPetAlive(pet);
+}
+
+function renderPetCreate(wasDead = false) {
+  return `
+    <div class="pet-page">
+      <div class="pet-create-card">
+        <div class="pet-create-icon">${wasDead ? '😢' : '🥚'}</div>
+        <h2>${wasDead ? 'Твой питомец погиб...' : 'Заведи питомца!'}</h2>
+        <p>${wasDead ? 'Но ты можешь завести нового друга!' : 'Выбери себе милого друга и заботься о нём каждый день!'}</p>
+        
+        <div class="pet-select-grid">
+          ${PET_ANIMALS.map(a => `
+            <div class="pet-select-item" data-pet-id="${a.id}">
+              <span class="pet-select-emoji">${a.emoji}</span>
+              <span class="pet-select-name">${a.name}</span>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="pet-name-input" style="display:none">
+          <input type="text" id="pet-name" placeholder="Имя питомца" maxlength="20">
+          <button class="btn btn-primary" id="create-pet-btn">Создать! 🎉</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPetAlive(pet) {
+  const animal = PET_ANIMALS.find(a => a.id === pet.animalId) || PET_ANIMALS[0];
+  const task = pet.currentTask ? PET_TASKS.find(t => t.id === pet.currentTask.taskId) : null;
+  const phrase = getRandomPhrase(pet);
+  const timeLeft = task ? getTaskTimeLeft(pet.currentTask) : null;
+  const isUrgent = timeLeft && timeLeft.hours < 1;
+  
+  // Определяем состояние питомца
+  let petState = 'idle';
+  let stateEmoji = '';
+  if (pet.lastAction) {
+    const timeSinceAction = Date.now() - new Date(pet.lastAction.time).getTime();
+    if (timeSinceAction < 3000) {
+      petState = pet.lastAction.type;
+      if (petState === 'feed') stateEmoji = '😋';
+      else if (petState === 'play') stateEmoji = '🎉';
+      else if (petState === 'sleep') stateEmoji = '😴';
+      else if (petState === 'wash') stateEmoji = '✨';
+      else if (petState === 'pet') stateEmoji = '🥰';
+      else if (petState === 'walk') stateEmoji = '🏃';
+    }
+  }
+  
+  return `
+    <div class="pet-page">
+      <div class="pet-card">
+        <div class="pet-header">
+          <div class="pet-name-display">${pet.name}</div>
+          <div class="pet-streak">🔥 ${pet.streak || 0} дней</div>
+        </div>
+        
+        <div class="pet-container">
+          <div class="pet-phrase ${phrase ? 'show' : ''}">${phrase || ''}</div>
+          <div class="pet-avatar ${petState !== 'idle' ? 'pet-action-' + petState : ''}" id="pet-avatar">
+            ${animal.emoji}
+            ${stateEmoji ? `<span class="pet-state-emoji">${stateEmoji}</span>` : ''}
+          </div>
+          <div class="pet-shadow"></div>
+        </div>
+        
+        <div class="pet-mood-bar">
+          <div class="mood-icons">
+            <span>🍎</span>
+            <span>⚽</span>
+            <span>😴</span>
+            <span>💕</span>
+          </div>
+        </div>
+        
+        ${task ? `
+          <div class="pet-task ${isUrgent ? 'urgent' : ''}">
+            <div class="task-icon">${task.emoji}</div>
+            <div class="task-info">
+              <div class="task-text">${task.text}</div>
+              <div class="task-timer ${isUrgent ? 'urgent' : ''}">
+                ⏰ ${timeLeft ? `${timeLeft.hours}ч ${timeLeft.minutes}м` : 'Время вышло!'}
+              </div>
+            </div>
+            <button class="task-btn" id="complete-task-btn">${task.action}</button>
+          </div>
+        ` : `
+          <div class="pet-happy">
+            <span>😊</span>
+            <span>Питомец доволен!</span>
+          </div>
+        `}
+        
+        <div class="pet-actions">
+          <button class="pet-action-btn" data-action="feed">🍎</button>
+          <button class="pet-action-btn" data-action="play">⚽</button>
+          <button class="pet-action-btn" data-action="sleep">😴</button>
+          <button class="pet-action-btn" data-action="pet">💕</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function getRandomPhrase(pet) {
+  // Показываем фразу с вероятностью 30%
+  if (Math.random() > 0.3) return null;
+  return PET_PHRASES[Math.floor(Math.random() * PET_PHRASES.length)];
+}
+
+function getTaskTimeLeft(task) {
+  if (!task || !task.deadline) return null;
+  const deadline = new Date(task.deadline).getTime();
+  const now = Date.now();
+  const diff = deadline - now;
+  
+  if (diff <= 0) return null;
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return { hours, minutes };
+}
+
+let selectedPetId = null;
+
+function setupPetEvents() {
+  // Выбор питомца
+  document.querySelectorAll('.pet-select-item').forEach(el => {
+    el.onclick = () => {
+      document.querySelectorAll('.pet-select-item').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedPetId = el.dataset.petId;
+      document.querySelector('.pet-name-input').style.display = 'block';
+      document.getElementById('pet-name').focus();
+    };
+  });
+  
+  // Создание питомца
+  document.getElementById('create-pet-btn')?.addEventListener('click', async () => {
+    const name = document.getElementById('pet-name').value.trim();
+    if (!selectedPetId) { showToast('Выбери питомца!'); return; }
+    if (!name) { showToast('Введи имя!'); return; }
+    
+    const pet = {
+      animalId: selectedPetId,
+      name: name,
+      createdAt: new Date().toISOString(),
+      streak: 0,
+      lastTaskDate: null,
+      currentTask: null,
+      isDead: false,
+      lastAction: null
+    };
+    
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    showToast(`${name} теперь твой друг! 🎉`);
+    renderPage('pet');
+  });
+  
+  // Выполнение задачи
+  document.getElementById('complete-task-btn')?.addEventListener('click', async () => {
+    const pet = getPetData();
+    if (!pet || !pet.currentTask) return;
+    
+    const task = PET_TASKS.find(t => t.id === pet.currentTask.taskId);
+    
+    // Анимация
+    pet.lastAction = { type: pet.currentTask.taskId, time: new Date().toISOString() };
+    pet.currentTask = null;
+    pet.tasksCompletedToday = (pet.tasksCompletedToday || 0) + 1;
+    
+    // Обновляем streak если это первая задача за день
+    const today = new Date().toDateString();
+    if (pet.lastTaskDate !== today) {
+      pet.streak = (pet.streak || 0) + 1;
+      pet.lastTaskDate = today;
+      pet.tasksCompletedToday = 1;
+    }
+    
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    
+    showToast(`${task?.action || 'Выполнено'}! 🎉`);
+    renderPage('pet');
+  });
+  
+  // Действия с питомцем (просто анимации)
+  document.querySelectorAll('.pet-action-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const action = btn.dataset.action;
+      const pet = getPetData();
+      if (!pet) return;
+      
+      pet.lastAction = { type: action, time: new Date().toISOString() };
+      currentUser.pet = pet;
+      
+      // Перерисовываем для анимации
+      renderPage('pet');
+      
+      const messages = {
+        feed: 'Ням-ням! 😋',
+        play: 'Ура, играем! 🎉',
+        sleep: 'Баю-бай... 😴',
+        pet: 'Мур-мур! 🥰'
+      };
+      showToast(messages[action] || '💕');
+    };
+  });
+  
+  // Проверяем нужна ли новая задача
+  checkPetTask();
+}
+
+async function checkPetTask() {
+  const pet = getPetData();
+  if (!pet || pet.isDead) return;
+  
+  // Проверяем не истекла ли текущая задача
+  if (pet.currentTask) {
+    const timeLeft = getTaskTimeLeft(pet.currentTask);
+    if (!timeLeft) {
+      // Питомец погиб!
+      pet.isDead = true;
+      pet.diedAt = new Date().toISOString();
+      await api.put(`/api/user/${currentUser.tgId}`, { pet });
+      currentUser.pet = pet;
+      showToast('😢 Твой питомец погиб...');
+      renderPage('pet');
+      return;
+    }
+  }
+  
+  // Проверяем нужна ли новая задача (с 4:00 до 18:00 МСК)
+  const now = new Date();
+  const mskHour = (now.getUTCHours() + 3) % 24;
+  
+  if (mskHour >= 4 && mskHour < 18) {
+    const today = now.toDateString();
+    const tasksToday = pet.tasksCompletedToday || 0;
+    
+    // Максимум 4 задачи в день
+    if (!pet.currentTask && tasksToday < 4) {
+      // Проверяем прошло ли достаточно времени с последней задачи
+      const lastTaskTime = pet.lastTaskGeneratedAt ? new Date(pet.lastTaskGeneratedAt).getTime() : 0;
+      const hoursSinceLastTask = (Date.now() - lastTaskTime) / (1000 * 60 * 60);
+      
+      // Генерируем задачу с вероятностью, зависящей от времени
+      if (hoursSinceLastTask > 2 || Math.random() < 0.1) {
+        const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
+        const deadline = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 часа
+        
+        pet.currentTask = {
+          taskId: randomTask.id,
+          createdAt: new Date().toISOString(),
+          deadline: deadline.toISOString()
+        };
+        pet.lastTaskGeneratedAt = new Date().toISOString();
+        
+        // Сбрасываем счетчик если новый день
+        if (pet.lastTaskDate !== today) {
+          pet.tasksCompletedToday = 0;
+        }
+        
+        await api.put(`/api/user/${currentUser.tgId}`, { pet });
+        currentUser.pet = pet;
+        renderPage('pet');
+      }
+    }
+  }
 }
 
 function renderDiary() {

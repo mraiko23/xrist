@@ -1,21 +1,23 @@
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use(express.static('public'));
 
-// Папка для хранения медиафайлов
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-app.use('/uploads', express.static(UPLOADS_DIR));
+// Обработка ошибок парсинга JSON (слишком большой payload)
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Файл слишком большой' });
+  }
+  if (err instanceof SyntaxError && err.status === 400) {
+    return res.status(400).json({ error: 'Неверный формат данных' });
+  }
+  next(err);
+});
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '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';
 const REPO_OWNER = process.env.REPO_OWNER || 'mraiko23';
@@ -30,6 +32,48 @@ async function getDB() {
   const data = await res.json();
   const content = Buffer.from(data.content, 'base64').toString('utf-8');
   return { data: JSON.parse(content), sha: data.sha };
+}
+
+// Загрузить файл в GitHub
+async function uploadFileToGitHub(filename, base64Content) {
+  const filePath = `uploads/${filename}`;
+  
+  // Проверяем существует ли файл
+  let sha = null;
+  try {
+    const checkRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
+      headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+    });
+    if (checkRes.ok) {
+      const existing = await checkRes.json();
+      sha = existing.sha;
+    }
+  } catch (e) {
+    // Файл не существует, это нормально
+  }
+  
+  const body = {
+    message: `Upload ${filename}`,
+    content: base64Content
+  };
+  if (sha) body.sha = sha;
+  
+  const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(`GitHub upload failed: ${err.message}`);
+  }
+  
+  // Возвращаем URL файла
+  return `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${filePath}`;
 }
 
 // Сохранить данные в GitHub с retry при конфликте
@@ -308,18 +352,17 @@ app.post('/api/submissions', async (req, res) => {
     const submissionId = Date.now().toString();
     const mediaFiles = [];
     
-    // Сохраняем медиафайлы на диск
+    // Загружаем медиафайлы в GitHub
     if (req.body.media && req.body.media.length > 0) {
       for (let i = 0; i < req.body.media.length; i++) {
         const mediaItem = req.body.media[i];
         
-        // Проверяем что данные есть
         if (!mediaItem.data) {
           console.log('Skipping media item without data');
           continue;
         }
         
-        // Определяем расширение из MIME типа в base64
+        // Определяем расширение из MIME типа
         let ext = '.jpg';
         const mimeMatch = mediaItem.data.match(/^data:([^;]+);base64,/);
         if (mimeMatch) {
@@ -334,19 +377,19 @@ app.post('/api/submissions', async (req, res) => {
         
         const base64Data = mediaItem.data.replace(/^data:[^;]+;base64,/, '');
         const filename = `${submissionId}_${i}${ext}`;
-        const filepath = path.join(UPLOADS_DIR, filename);
         
         try {
-          fs.writeFileSync(filepath, base64Data, 'base64');
-          console.log(`Saved file: ${filename}`);
+          console.log(`Uploading ${filename} to GitHub...`);
+          const url = await uploadFileToGitHub(filename, base64Data);
+          console.log(`Uploaded: ${url}`);
           
           mediaFiles.push({
-            url: `/uploads/${filename}`,
+            url: url,
             type: mediaItem.type,
             name: mediaItem.name || filename
           });
-        } catch (writeErr) {
-          console.error(`Error writing file ${filename}:`, writeErr);
+        } catch (uploadErr) {
+          console.error(`Error uploading ${filename}:`, uploadErr.message);
         }
       }
     }

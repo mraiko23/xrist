@@ -37,13 +37,41 @@ const PET_TASKS = [
   { id: 'walk', emoji: '🚶', text: 'Погуляй со мной!', action: 'Гулять' }
 ];
 
-// Проверить и сгенерировать задачу для питомца
+// Генерирует случайные времена для задач на день (4 задачи с 4:00 до 18:00 МСК)
+function generateDailyTaskTimes(seed) {
+  // Используем seed для генерации одинаковых времён для одного дня
+  const random = (s) => {
+    const x = Math.sin(s) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  const times = [];
+  // 4 задачи распределены по периодам: 4-7, 7-11, 11-14, 14-18 МСК
+  const periods = [
+    { start: 4, end: 7 },
+    { start: 7, end: 11 },
+    { start: 11, end: 14 },
+    { start: 14, end: 18 }
+  ];
+  
+  for (let i = 0; i < 4; i++) {
+    const period = periods[i];
+    const hour = period.start + random(seed + i) * (period.end - period.start);
+    const minute = random(seed + i + 100) * 60;
+    times.push({ hour: Math.floor(hour), minute: Math.floor(minute) });
+  }
+  
+  return times;
+}
+
+// Проверить и активировать запланированные задачи питомца
 function checkAndGeneratePetTask(pet) {
-  if (!pet || pet.isDead) return pet;
+  if (!pet || pet.isDead) return { pet, changed: false };
   
   const now = new Date();
-  const mskHour = (now.getUTCHours() + 3) % 24;
-  const today = now.toDateString();
+  const mskNow = new Date(now.getTime() + 3 * 60 * 60 * 1000); // МСК время
+  const today = mskNow.toISOString().split('T')[0]; // YYYY-MM-DD
+  let changed = false;
   
   // Проверяем не истекла ли текущая задача
   if (pet.currentTask) {
@@ -53,43 +81,61 @@ function checkAndGeneratePetTask(pet) {
       pet.isDead = true;
       pet.diedAt = now.toISOString();
       pet.currentTask = null;
-      return pet;
+      return { pet, changed: true };
     }
-    return pet; // Задача ещё активна
+    return { pet, changed: false }; // Задача ещё активна
   }
   
-  // Генерируем задачи только с 4:00 до 18:00 МСК
-  if (mskHour < 4 || mskHour >= 18) return pet;
-  
-  // Сбрасываем счетчик если новый день
-  if (pet.lastTaskDate !== today) {
-    pet.tasksCompletedToday = 0;
+  // Если новый день - генерируем новое расписание задач
+  if (pet.scheduledTasksDate !== today) {
+    // Seed на основе ID питомца и даты для уникальности
+    const seed = (pet.animalId || 'pet').split('').reduce((a, c) => a + c.charCodeAt(0), 0) + 
+                 parseInt(today.replace(/-/g, ''));
+    pet.scheduledTasks = generateDailyTaskTimes(seed);
+    pet.scheduledTasksDate = today;
+    pet.completedTasksToday = 0;
+    changed = true;
   }
   
-  // Максимум 4 задачи в день
-  if ((pet.tasksCompletedToday || 0) >= 4) return pet;
+  // Проверяем наступило ли время для следующей задачи
+  const completedToday = pet.completedTasksToday || 0;
+  if (completedToday >= 4) return { pet, changed }; // Все задачи на сегодня выполнены
   
-  // Проверяем прошло ли достаточно времени с последней задачи (минимум 1 час)
-  const lastTaskTime = pet.lastTaskGeneratedAt ? new Date(pet.lastTaskGeneratedAt).getTime() : 0;
-  const hoursSinceLastTask = (Date.now() - lastTaskTime) / (1000 * 60 * 60);
+  const nextTaskTime = pet.scheduledTasks?.[completedToday];
+  if (!nextTaskTime) return { pet, changed };
   
-  // Генерируем задачу с вероятностью, зависящей от времени
-  // Чем больше времени прошло, тем выше шанс
-  const chance = Math.min(0.8, hoursSinceLastTask * 0.15);
+  const mskHour = mskNow.getUTCHours();
+  const mskMinute = mskNow.getUTCMinutes();
+  const currentMskMinutes = mskHour * 60 + mskMinute;
+  const taskMskMinutes = nextTaskTime.hour * 60 + nextTaskTime.minute;
   
-  if (Math.random() < chance) {
+  // Если текущее время >= запланированного времени задачи - активируем её
+  if (currentMskMinutes >= taskMskMinutes) {
     const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
-    const deadline = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 часа
+    
+    // Дедлайн = время задачи + 4 часа
+    const taskStartTime = new Date(mskNow);
+    taskStartTime.setUTCHours(nextTaskTime.hour, nextTaskTime.minute, 0, 0);
+    const deadline = new Date(taskStartTime.getTime() + 4 * 60 * 60 * 1000);
+    
+    // Если дедлайн уже прошёл - питомец погиб
+    if (now > deadline) {
+      pet.isDead = true;
+      pet.diedAt = deadline.toISOString();
+      pet.currentTask = null;
+      return { pet, changed: true };
+    }
     
     pet.currentTask = {
       taskId: randomTask.id,
-      createdAt: now.toISOString(),
+      createdAt: taskStartTime.toISOString(),
       deadline: deadline.toISOString()
     };
-    pet.lastTaskGeneratedAt = now.toISOString();
+    changed = true;
+    console.log(`Task ${randomTask.id} activated for pet at ${nextTaskTime.hour}:${nextTaskTime.minute} MSK`);
   }
   
-  return pet;
+  return { pet, changed };
 }
 
 // Шаблон базы данных
@@ -334,12 +380,12 @@ app.get('/api/user/:tgId', async (req, res) => {
     
     let user = data.users[userIdx];
     
-    // Проверяем и генерируем задачу для питомца
+    // Проверяем и активируем запланированные задачи питомца
     if (user.pet && !user.pet.isDead) {
-      const updatedPet = checkAndGeneratePetTask(user.pet);
+      const { pet: updatedPet, changed } = checkAndGeneratePetTask(user.pet);
       
       // Если что-то изменилось - сохраняем
-      if (JSON.stringify(updatedPet) !== JSON.stringify(user.pet)) {
+      if (changed) {
         user.pet = updatedPet;
         data.users[userIdx] = user;
         await saveDB(data, sha);

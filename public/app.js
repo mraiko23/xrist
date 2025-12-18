@@ -198,12 +198,22 @@ let isLoadingMore = false;
 
 function renderProgress() {
   const stickers = currentUser?.stickers || 0;
+  const spentStickers = currentUser?.spentStickers || 0;
+  const earnedStickers = stickers + spentStickers; // Всего заработано
+  const claimedGifts = currentUser?.claimedGifts || 0; // Сколько подарков уже получено
   const threshold = settings.giftThreshold || 5;
-  const toGift = threshold - (stickers % threshold);
-  const showAlert = stickers > 0 && stickers % threshold === 0;
   
-  // Начальное количество шагов
-  loadedSteps = Math.max(stickers + 10, 20);
+  // Сколько подарков заслужено (по заработанным наклейкам)
+  const deservedGifts = Math.floor(earnedStickers / threshold);
+  // Можно ли получить новый подарок
+  const canClaimGift = deservedGifts > claimedGifts;
+  
+  // До следующего подарка считаем от заработанных
+  const toGift = threshold - (earnedStickers % threshold);
+  const showAlert = canClaimGift;
+  
+  // Начальное количество шагов (показываем по заработанным)
+  loadedSteps = Math.max(earnedStickers + 10, 20);
 
   return `
     <div class="progress-page">
@@ -211,13 +221,14 @@ function renderProgress() {
         <h2>Моя дорожка</h2>
         <div class="progress-counter">
           <span>До подарка:</span>
-          <span class="num">${toGift === threshold ? threshold : toGift}</span>
+          <span class="num">${toGift === threshold && earnedStickers === 0 ? threshold : toGift}</span>
           <span>🎁</span>
         </div>
+        <div class="stickers-info">🌟 ${stickers} наклеек</div>
       </div>
       
       <div class="road-container" id="road-container">
-        <div class="road" id="road">${generateRoadItems(1, loadedSteps)}</div>
+        <div class="road" id="road">${generateRoadItems(1, loadedSteps, earnedStickers)}</div>
         <div class="load-more" id="load-more">
           <div class="load-spinner"></div>
         </div>
@@ -235,14 +246,15 @@ function renderProgress() {
 }
 
 // Генерация шагов дорожки
-function generateRoadItems(from, to) {
-  const stickers = currentUser?.stickers || 0;
+function generateRoadItems(from, to, earnedOverride = null) {
+  const spentStickers = currentUser?.spentStickers || 0;
+  const earnedStickers = earnedOverride !== null ? earnedOverride : (currentUser?.stickers || 0) + spentStickers;
   const threshold = settings.giftThreshold || 5;
   let html = '';
   
   for (let i = from; i <= to; i++) {
-    const done = i <= stickers;
-    const isCurrent = i === stickers + 1;
+    const done = i <= earnedStickers;
+    const isCurrent = i === earnedStickers + 1;
     const isGift = i % threshold === 0;
     
     let circleClass = 'step-circle';
@@ -672,6 +684,30 @@ const PET_PHRASES = [
   '💭 Мне повезло с тобой!'
 ];
 
+// Магазин одежды для питомца
+const PET_SHOP_ITEMS = [
+  // Шапки
+  { id: 'hat_crown', emoji: '👑', name: 'Корона', type: 'hat', price: 3 },
+  { id: 'hat_cap', emoji: '🧢', name: 'Кепка', type: 'hat', price: 2 },
+  { id: 'hat_tophat', emoji: '🎩', name: 'Цилиндр', type: 'hat', price: 4 },
+  { id: 'hat_party', emoji: '🎉', name: 'Колпак', type: 'hat', price: 2 },
+  { id: 'hat_cowboy', emoji: '🤠', name: 'Ковбойская', type: 'hat', price: 3 },
+  { id: 'hat_santa', emoji: '🎅', name: 'Новогодняя', type: 'hat', price: 5 },
+  // Шарфы
+  { id: 'scarf_red', emoji: '🧣', name: 'Красный шарф', type: 'scarf', price: 2 },
+  { id: 'scarf_rainbow', emoji: '🌈', name: 'Радужный', type: 'scarf', price: 4 },
+  { id: 'scarf_gold', emoji: '✨', name: 'Золотой', type: 'scarf', price: 5 },
+  // Обувь
+  { id: 'shoes_sneakers', emoji: '👟', name: 'Кроссовки', type: 'shoes', price: 3 },
+  { id: 'shoes_boots', emoji: '👢', name: 'Сапожки', type: 'shoes', price: 3 },
+  { id: 'shoes_slippers', emoji: '🥿', name: 'Тапочки', type: 'shoes', price: 2 },
+  // Аксессуары
+  { id: 'acc_glasses', emoji: '😎', name: 'Очки', type: 'accessory', price: 2 },
+  { id: 'acc_bow', emoji: '🎀', name: 'Бантик', type: 'accessory', price: 1 },
+  { id: 'acc_medal', emoji: '🏅', name: 'Медаль', type: 'accessory', price: 4 },
+  { id: 'acc_heart', emoji: '💖', name: 'Сердечко', type: 'accessory', price: 2 }
+];
+
 function getPetData() {
   return currentUser?.pet || null;
 }
@@ -712,18 +748,68 @@ function renderPetCreate(wasDead = false) {
   `;
 }
 
+function getCurrentSeason() {
+  // Меняем сезон каждый день (по номеру дня в году)
+  const now = new Date();
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const seasonIndex = dayOfYear % 4;
+  const seasons = [
+    { id: 'spring', name: 'Весна', bg: '🌸🌷🌱', emoji: '🌸', colors: ['#a8e6cf', '#dcedc1'] },
+    { id: 'summer', name: 'Лето', bg: '☀️🌻🌴', emoji: '☀️', colors: ['#ffeaa7', '#fdcb6e'] },
+    { id: 'autumn', name: 'Осень', bg: '🍂🍁🌰', emoji: '🍂', colors: ['#fab1a0', '#e17055'] },
+    { id: 'winter', name: 'Зима', bg: '❄️⛄🌨️', emoji: '❄️', colors: ['#dfe6e9', '#74b9ff'] }
+  ];
+  return seasons[seasonIndex];
+}
+
+function renderPetOutfitOnPet(pet) {
+  const outfit = pet.outfit || {};
+  const items = [];
+  
+  // Шапка сверху
+  if (outfit.hat) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.hat);
+    if (item) items.push(`<span class="outfit-hat">${item.emoji}</span>`);
+  }
+  // Аксессуар справа
+  if (outfit.accessory) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.accessory);
+    if (item) items.push(`<span class="outfit-accessory">${item.emoji}</span>`);
+  }
+  // Шарф слева
+  if (outfit.scarf) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.scarf);
+    if (item) items.push(`<span class="outfit-scarf">${item.emoji}</span>`);
+  }
+  // Обувь снизу
+  if (outfit.shoes) {
+    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.shoes);
+    if (item) items.push(`<span class="outfit-shoes">${item.emoji}</span>`);
+  }
+  
+  return items.join('');
+}
+
 function renderPetAlive(pet) {
   const animal = PET_ANIMALS.find(a => a.id === pet.animalId) || PET_ANIMALS[0];
   const task = pet.currentTask ? PET_TASKS.find(t => t.id === pet.currentTask.taskId) : null;
   const phrase = getRandomPhrase(pet);
   const timeLeft = task ? getTaskTimeLeft(pet.currentTask) : null;
   const isUrgent = timeLeft && timeLeft.hours < 1;
+  const season = getCurrentSeason();
   
   return `
     <div class="pet-page">
-      <div class="pet-card">
+      <div class="pet-card pet-season-${season.id}">
+        <div class="pet-season-bg">
+          <span class="season-emoji s1">${season.bg.split('')[0]}</span>
+          <span class="season-emoji s2">${season.bg.split('')[1]}</span>
+          <span class="season-emoji s3">${season.bg.split('')[2]}</span>
+          <span class="season-emoji s4">${season.bg.split('')[0]}</span>
+          <span class="season-emoji s5">${season.bg.split('')[1]}</span>
+        </div>
         <div class="pet-header">
-          <div class="pet-name-display">${pet.name}</div>
+          <div class="pet-name-display">${pet.name} <span class="season-badge">${season.emoji}</span></div>
           <div class="pet-header-right">
             <button class="pet-edit-btn" id="edit-pet-btn">✏️</button>
             <div class="pet-streak">🔥 ${pet.streak || 0} дней</div>
@@ -732,9 +818,12 @@ function renderPetAlive(pet) {
         
         <div class="pet-container">
           <div class="pet-phrase ${phrase ? 'show' : ''}">${phrase || ''}</div>
-          <div class="pet-avatar" id="pet-avatar">
-            ${animal.emoji}
-            <span class="pet-state-emoji"></span>
+          <div class="pet-avatar-wrapper">
+            <div class="pet-avatar" id="pet-avatar">
+              ${animal.emoji}
+              <span class="pet-state-emoji"></span>
+            </div>
+            ${renderPetOutfitOnPet(pet)}
           </div>
           <div class="pet-shadow"></div>
         </div>
@@ -772,6 +861,13 @@ function renderPetAlive(pet) {
           <button class="pet-action-btn" data-action="sleep">😴</button>
           <button class="pet-action-btn" data-action="pet">💕</button>
         </div>
+        
+        <div class="pet-shop-buttons">
+          <button class="pet-shop-btn" id="open-shop-btn">🛒 Магазин</button>
+          <button class="pet-inventory-btn" id="open-inventory-btn">👕 Одежда</button>
+        </div>
+        
+        ${renderPetOutfit(pet)}
       </div>
     </div>
     
@@ -808,7 +904,121 @@ function renderPetAlive(pet) {
         </div>
       </div>
     </div>
+    
+    <!-- Модалка магазина -->
+    <div class="modal" id="pet-shop-modal">
+      <div class="modal-content pet-shop-modal">
+        <div class="modal-header">
+          <h3>🛒 Магазин</h3>
+          <div class="shop-balance">🌟 ${currentUser?.stickers || 0}</div>
+          <button class="modal-close" id="close-shop">×</button>
+        </div>
+        <div class="shop-tabs">
+          <button class="shop-tab active" data-type="hat">👒 Шапки</button>
+          <button class="shop-tab" data-type="scarf">🧣 Шарфы</button>
+          <button class="shop-tab" data-type="shoes">👟 Обувь</button>
+          <button class="shop-tab" data-type="accessory">✨ Другое</button>
+        </div>
+        <div class="shop-items" id="shop-items">
+          ${renderShopItems('hat', pet)}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Модалка инвентаря -->
+    <div class="modal" id="pet-inventory-modal">
+      <div class="modal-content pet-inventory-modal">
+        <div class="modal-header">
+          <h3>👕 Одежда питомца</h3>
+          <button class="modal-close" id="close-inventory">×</button>
+        </div>
+        <div class="inventory-current">
+          <p>Сейчас надето:</p>
+          <div class="current-outfit">
+            ${renderCurrentOutfit(pet)}
+          </div>
+        </div>
+        <div class="inventory-items" id="inventory-items">
+          ${renderInventoryItems(pet)}
+        </div>
+      </div>
+    </div>
   `;
+}
+
+function renderPetOutfit(pet) {
+  const outfit = pet.outfit || {};
+  const items = [];
+  if (outfit.hat) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.hat)?.emoji || '');
+  if (outfit.scarf) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.scarf)?.emoji || '');
+  if (outfit.shoes) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.shoes)?.emoji || '');
+  if (outfit.accessory) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.accessory)?.emoji || '');
+  
+  if (items.length === 0) return '';
+  return `<div class="pet-outfit-display">${items.join(' ')}</div>`;
+}
+
+function renderShopItems(type, pet) {
+  const inventory = pet.inventory || [];
+  const items = PET_SHOP_ITEMS.filter(i => i.type === type);
+  
+  return items.map(item => {
+    const owned = inventory.includes(item.id);
+    return `
+      <div class="shop-item ${owned ? 'owned' : ''}" data-item-id="${item.id}">
+        <span class="shop-item-emoji">${item.emoji}</span>
+        <span class="shop-item-name">${item.name}</span>
+        <span class="shop-item-price">${owned ? '✓' : `🌟 ${item.price}`}</span>
+        ${!owned ? `<button class="shop-buy-btn" data-item-id="${item.id}">Купить</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCurrentOutfit(pet) {
+  const outfit = pet.outfit || {};
+  const slots = [
+    { type: 'hat', label: '👒 Шапка', id: outfit.hat },
+    { type: 'scarf', label: '🧣 Шарф', id: outfit.scarf },
+    { type: 'shoes', label: '👟 Обувь', id: outfit.shoes },
+    { type: 'accessory', label: '✨ Аксессуар', id: outfit.accessory }
+  ];
+  
+  return slots.map(slot => {
+    const item = slot.id ? PET_SHOP_ITEMS.find(i => i.id === slot.id) : null;
+    return `
+      <div class="outfit-slot">
+        <span class="slot-label">${slot.label}</span>
+        <span class="slot-item">${item ? item.emoji : '—'}</span>
+        ${item ? `<button class="slot-remove" data-type="${slot.type}">✕</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderInventoryItems(pet) {
+  const inventory = pet.inventory || [];
+  const outfit = pet.outfit || {};
+  
+  if (inventory.length === 0) {
+    return '<div class="empty-inventory">Пока ничего нет. Загляни в магазин! 🛒</div>';
+  }
+  
+  return inventory.map(itemId => {
+    const item = PET_SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item) return '';
+    const isWorn = outfit[item.type] === item.id;
+    return `
+      <div class="inventory-item ${isWorn ? 'worn' : ''}" data-item-id="${item.id}">
+        <span class="inv-item-emoji">${item.emoji}</span>
+        <span class="inv-item-name">${item.name}</span>
+        ${isWorn 
+          ? '<span class="inv-worn-badge">Надето</span>' 
+          : `<button class="inv-wear-btn" data-item-id="${item.id}" data-type="${item.type}">Надеть</button>`
+        }
+      </div>
+    `;
+  }).join('');
 }
 
 function getRandomPhrase(pet) {
@@ -1017,8 +1227,139 @@ function setupPetEvents() {
     renderPage('pet');
   });
   
+  // ===== МАГАЗИН =====
+  const shopModal = document.getElementById('pet-shop-modal');
+  const inventoryModal = document.getElementById('pet-inventory-modal');
+  
+  document.getElementById('open-shop-btn')?.addEventListener('click', () => {
+    shopModal?.classList.add('active');
+  });
+  
+  document.getElementById('close-shop')?.addEventListener('click', () => {
+    shopModal?.classList.remove('active');
+  });
+  
+  shopModal?.addEventListener('click', (e) => {
+    if (e.target === shopModal) shopModal.classList.remove('active');
+  });
+  
+  // Табы магазина
+  document.querySelectorAll('.shop-tab').forEach(tab => {
+    tab.onclick = () => {
+      document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const type = tab.dataset.type;
+      document.getElementById('shop-items').innerHTML = renderShopItems(type, getPetData());
+      setupShopBuyButtons();
+    };
+  });
+  
+  setupShopBuyButtons();
+  
+  // ===== ИНВЕНТАРЬ =====
+  document.getElementById('open-inventory-btn')?.addEventListener('click', () => {
+    inventoryModal?.classList.add('active');
+  });
+  
+  document.getElementById('close-inventory')?.addEventListener('click', () => {
+    inventoryModal?.classList.remove('active');
+  });
+  
+  inventoryModal?.addEventListener('click', (e) => {
+    if (e.target === inventoryModal) inventoryModal.classList.remove('active');
+  });
+  
+  setupInventoryButtons();
+  
   // Проверяем нужна ли новая задача
   checkPetTask();
+}
+
+function setupShopBuyButtons() {
+  document.querySelectorAll('.shop-buy-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const itemId = btn.dataset.itemId;
+      const item = PET_SHOP_ITEMS.find(i => i.id === itemId);
+      if (!item) return;
+      
+      const stickers = currentUser?.stickers || 0;
+      if (stickers < item.price) {
+        showToast('Недостаточно наклеек! 😢');
+        return;
+      }
+      
+      const pet = getPetData();
+      if (!pet) return;
+      
+      // Добавляем в инвентарь
+      if (!pet.inventory) pet.inventory = [];
+      if (pet.inventory.includes(itemId)) {
+        showToast('Уже куплено!');
+        return;
+      }
+      
+      pet.inventory.push(itemId);
+      
+      // Списываем наклейки и увеличиваем счётчик потраченных
+      const newStickers = stickers - item.price;
+      const spentStickers = (currentUser.spentStickers || 0) + item.price;
+      
+      await api.put(`/api/user/${currentUser.tgId}`, { 
+        pet, 
+        stickers: newStickers,
+        spentStickers: spentStickers
+      });
+      currentUser.pet = pet;
+      currentUser.stickers = newStickers;
+      currentUser.spentStickers = spentStickers;
+      
+      showToast(`${item.emoji} ${item.name} куплено! 🎉`);
+      
+      // Обновляем UI
+      document.querySelector('.shop-balance').textContent = `🌟 ${newStickers}`;
+      const activeTab = document.querySelector('.shop-tab.active');
+      document.getElementById('shop-items').innerHTML = renderShopItems(activeTab?.dataset.type || 'hat', pet);
+      setupShopBuyButtons();
+    };
+  });
+}
+
+function setupInventoryButtons() {
+  // Надеть вещь
+  document.querySelectorAll('.inv-wear-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const itemId = btn.dataset.itemId;
+      const type = btn.dataset.type;
+      const pet = getPetData();
+      if (!pet) return;
+      
+      if (!pet.outfit) pet.outfit = {};
+      pet.outfit[type] = itemId;
+      
+      await api.put(`/api/user/${currentUser.tgId}`, { pet });
+      currentUser.pet = pet;
+      
+      showToast('Надето! 👕');
+      renderPage('pet');
+    };
+  });
+  
+  // Снять вещь
+  document.querySelectorAll('.slot-remove').forEach(btn => {
+    btn.onclick = async () => {
+      const type = btn.dataset.type;
+      const pet = getPetData();
+      if (!pet || !pet.outfit) return;
+      
+      delete pet.outfit[type];
+      
+      await api.put(`/api/user/${currentUser.tgId}`, { pet });
+      currentUser.pet = pet;
+      
+      showToast('Снято!');
+      renderPage('pet');
+    };
+  });
 }
 
 async function checkPetTask() {
@@ -1321,8 +1662,9 @@ function renderAdminTopics() {
           <input type="text" id="t-title" placeholder="Название" required>
           <input type="date" id="t-date" required>
           <textarea id="t-desc" placeholder="Описание" rows="2"></textarea>
-          <label style="display:flex;align-items:center;gap:8px;margin:10px 0">
-            <input type="checkbox" id="t-cur" style="width:auto"> Текущая тема
+          <label class="checkbox-label">
+            <input type="checkbox" id="t-cur" class="checkbox-input"> 
+            <span class="checkbox-text">Текущая тема</span>
           </label>
           <div class="modal-buttons">
             <button type="button" class="btn btn-secondary" id="close-t-modal">Отмена</button>

@@ -740,7 +740,10 @@ function renderPetAlive(pet) {
       <div class="pet-card">
         <div class="pet-header">
           <div class="pet-name-display">${pet.name}</div>
-          <div class="pet-streak">🔥 ${pet.streak || 0} дней</div>
+          <div class="pet-header-right">
+            <button class="pet-edit-btn" id="edit-pet-btn">✏️</button>
+            <div class="pet-streak">🔥 ${pet.streak || 0} дней</div>
+          </div>
         </div>
         
         <div class="pet-container">
@@ -784,6 +787,40 @@ function renderPetAlive(pet) {
           <button class="pet-action-btn" data-action="play">⚽</button>
           <button class="pet-action-btn" data-action="sleep">😴</button>
           <button class="pet-action-btn" data-action="pet">💕</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Модалка редактирования питомца -->
+    <div class="modal-overlay" id="pet-edit-modal">
+      <div class="modal-content pet-edit-modal">
+        <div class="modal-header">
+          <h3>✏️ Редактировать питомца</h3>
+          <button class="modal-close" id="close-pet-edit">×</button>
+        </div>
+        
+        <div class="pet-edit-section">
+          <label>Имя питомца</label>
+          <input type="text" id="edit-pet-name" value="${pet.name}" placeholder="Введите имя">
+          <button class="btn btn-primary" id="save-pet-name">Сохранить имя</button>
+          <p class="edit-hint">Серия дней сохранится</p>
+        </div>
+        
+        <div class="pet-edit-divider">
+          <span>или</span>
+        </div>
+        
+        <div class="pet-edit-section">
+          <label>Сменить питомца</label>
+          <p class="edit-warning">⚠️ Серия дней обнулится!</p>
+          <div class="pet-select-grid-mini">
+            ${PET_ANIMALS.map(a => `
+              <div class="pet-select-item-mini ${a.id === pet.animalId ? 'current' : ''}" data-animal="${a.id}">
+                <span class="pet-select-emoji">${a.emoji}</span>
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn btn-secondary" id="change-pet-animal" disabled>Сменить питомца</button>
         </div>
       </div>
     </div>
@@ -895,6 +932,77 @@ function setupPetEvents() {
       };
       showToast(messages[action] || '💕');
     };
+  });
+  
+  // Редактирование питомца
+  const editModal = document.getElementById('pet-edit-modal');
+  let selectedNewAnimal = null;
+  
+  document.getElementById('edit-pet-btn')?.addEventListener('click', () => {
+    editModal?.classList.add('active');
+    selectedNewAnimal = null;
+    document.querySelectorAll('.pet-select-item-mini').forEach(e => e.classList.remove('selected'));
+    document.getElementById('change-pet-animal').disabled = true;
+  });
+  
+  document.getElementById('close-pet-edit')?.addEventListener('click', () => {
+    editModal?.classList.remove('active');
+  });
+  
+  editModal?.addEventListener('click', (e) => {
+    if (e.target === editModal) editModal.classList.remove('active');
+  });
+  
+  // Сохранить имя (серия сохраняется)
+  document.getElementById('save-pet-name')?.addEventListener('click', async () => {
+    const newName = document.getElementById('edit-pet-name').value.trim();
+    if (!newName) { showToast('Введи имя!'); return; }
+    
+    const pet = getPetData();
+    if (!pet) return;
+    
+    pet.name = newName;
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    
+    editModal?.classList.remove('active');
+    showToast('Имя изменено! ✨');
+    renderPage('pet');
+  });
+  
+  // Выбор нового животного
+  document.querySelectorAll('.pet-select-item-mini').forEach(el => {
+    el.onclick = () => {
+      const pet = getPetData();
+      if (el.classList.contains('current')) return; // Нельзя выбрать текущего
+      
+      document.querySelectorAll('.pet-select-item-mini').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedNewAnimal = el.dataset.animal;
+      document.getElementById('change-pet-animal').disabled = false;
+    };
+  });
+  
+  // Сменить питомца (серия обнуляется)
+  document.getElementById('change-pet-animal')?.addEventListener('click', async () => {
+    if (!selectedNewAnimal) return;
+    
+    const pet = getPetData();
+    if (!pet) return;
+    
+    const animal = PET_ANIMALS.find(a => a.id === selectedNewAnimal);
+    
+    pet.animalId = selectedNewAnimal;
+    pet.streak = 0; // Обнуляем серию!
+    pet.lastTaskDate = null;
+    pet.tasksCompletedToday = 0;
+    
+    await api.put(`/api/user/${currentUser.tgId}`, { pet });
+    currentUser.pet = pet;
+    
+    editModal?.classList.remove('active');
+    showToast(`Теперь у тебя ${animal?.name || 'новый питомец'}! 🎉`);
+    renderPage('pet');
   });
   
   // Проверяем нужна ли новая задача

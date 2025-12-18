@@ -2589,3 +2589,152 @@ button, input, textarea {
   0%, 100% { transform: rotate(-3deg); }
   50% { transform: rotate(3deg); }
 }
+
+/* Кнопка редактирования питомца */
+.pet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pet-edit-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pet-edit-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* Модалка редактирования питомца */
+.pet-edit-modal {
+  max-width: 340px;
+  padding: 24px 20px;
+}
+
+.pet-edit-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pet-edit-modal .modal-header h3 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.pet-edit-modal .modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f2f6;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.pet-edit-modal .modal-close:hover {
+  background: #e4e6eb;
+  transform: rotate(90deg);
+}
+
+.pet-edit-section {
+  margin-bottom: 20px;
+}
+
+.pet-edit-section label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.pet-edit-section input {
+  margin-bottom: 12px;
+}
+
+.edit-hint {
+  font-size: 12px;
+  color: var(--success);
+  margin-top: 8px;
+  text-align: center;
+}
+
+.edit-warning {
+  font-size: 13px;
+  color: var(--danger);
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.pet-edit-divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.pet-edit-divider::before,
+.pet-edit-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e0e0e0;
+}
+
+.pet-edit-divider span {
+  padding: 0 16px;
+  color: var(--text-light);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Мини-сетка выбора питомца */
+.pet-select-grid-mini {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.pet-select-item-mini {
+  background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  padding: 10px 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+  text-align: center;
+}
+
+.pet-select-item-mini:hover {
+  transform: translateY(-2px);
+}
+
+.pet-select-item-mini.current {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pet-select-item-mini.selected {
+  border-color: var(--primary);
+  background: rgba(108,92,231,0.1);
+}
+
+.pet-select-item-mini .pet-select-emoji {
+  font-size: 28px;
+}

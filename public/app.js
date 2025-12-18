@@ -201,6 +201,7 @@ function renderProgress() {
   const spentStickers = currentUser?.spentStickers || 0;
   const earnedStickers = stickers + spentStickers; // Всего заработано
   const claimedGifts = currentUser?.claimedGifts || 0; // Сколько подарков уже получено
+  const lastAcknowledgedGift = currentUser?.lastAcknowledgedGift || 0; // Последний подтверждённый подарок
   const threshold = settings.giftThreshold || 5;
   
   // Сколько подарков заслужено (по заработанным наклейкам)
@@ -208,12 +209,19 @@ function renderProgress() {
   // Можно ли получить новый подарок
   const canClaimGift = deservedGifts > claimedGifts;
   
+  // Показать полноэкранный модал если есть новый подарок который ещё не подтверждён
+  const showGiftModal = deservedGifts > lastAcknowledgedGift;
+  
   // До следующего подарка считаем от заработанных
   const toGift = threshold - (earnedStickers % threshold);
-  const showAlert = canClaimGift;
   
   // Начальное количество шагов (показываем по заработанным)
   loadedSteps = Math.max(earnedStickers + 10, 20);
+
+  // Показываем модал после рендера
+  if (showGiftModal) {
+    setTimeout(() => showGiftCelebrationModal(deservedGifts), 300);
+  }
 
   return `
     <div class="progress-page">
@@ -234,15 +242,63 @@ function renderProgress() {
         </div>
       </div>
       
-      ${showAlert ? `
-        <div class="gift-alert">
-          <span class="emoji">🎉</span>
-          <strong>Поздравляем!</strong>
-          <p>Подойди к ${settings.adminUsername} за сладким подарком!</p>
+      ${canClaimGift ? `
+        <div class="gift-alert-small">
+          <span>🎁</span>
+          <span>У тебя есть подарок!</span>
         </div>
       ` : ''}
     </div>
+    
+    <!-- Полноэкранный модал поздравления -->
+    <div class="gift-celebration-modal" id="gift-celebration-modal">
+      <div class="gift-celebration-content">
+        <div class="gift-confetti">
+          <span>🎊</span><span>✨</span><span>🎉</span><span>⭐</span><span>🎊</span>
+        </div>
+        <div class="gift-celebration-emoji">🎁</div>
+        <h2>🎉 Поздравляем! 🎉</h2>
+        <p class="gift-celebration-text">Подойди к <strong>${settings.adminUsername}</strong> за сладким подарком!</p>
+        <button class="btn btn-primary gift-celebration-btn" id="close-gift-modal">Ура! Понятно!</button>
+      </div>
+    </div>
   `;
+}
+
+// Показать полноэкранный модал поздравления
+function showGiftCelebrationModal(giftNumber) {
+  const modal = document.getElementById('gift-celebration-modal');
+  if (modal) {
+    modal.classList.add('active');
+    
+    // Обработчик закрытия
+    const closeBtn = document.getElementById('close-gift-modal');
+    if (closeBtn) {
+      closeBtn.onclick = async () => {
+        modal.classList.remove('active');
+        // Сохраняем что пользователь видел этот подарок
+        await acknowledgeGift(giftNumber);
+      };
+    }
+    
+    // Закрытие по клику на фон
+    modal.onclick = async (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+        await acknowledgeGift(giftNumber);
+      }
+    };
+  }
+}
+
+// Подтвердить что пользователь видел подарок
+async function acknowledgeGift(giftNumber) {
+  try {
+    currentUser.lastAcknowledgedGift = giftNumber;
+    await api.put(`/api/user/${currentUser.tgId}`, { lastAcknowledgedGift: giftNumber });
+  } catch (e) {
+    console.error('Error acknowledging gift:', e);
+  }
 }
 
 // Генерация шагов дорожки

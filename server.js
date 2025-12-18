@@ -27,6 +27,71 @@ const REPO_OWNER = process.env.REPO_OWNER || 'mraiko23';
 const REPO_NAME = process.env.REPO_NAME || 'xristianindb';
 const FILE_PATH = 'db.json';
 
+// Задачи питомца
+const PET_TASKS = [
+  { id: 'feed', emoji: '🍎', text: 'Покорми меня!', action: 'Покормить' },
+  { id: 'play', emoji: '⚽', text: 'Поиграй со мной!', action: 'Играть' },
+  { id: 'sleep', emoji: '😴', text: 'Уложи меня спать!', action: 'Уложить' },
+  { id: 'wash', emoji: '🛁', text: 'Помой меня!', action: 'Помыть' },
+  { id: 'pet', emoji: '💕', text: 'Погладь меня!', action: 'Погладить' },
+  { id: 'walk', emoji: '🚶', text: 'Погуляй со мной!', action: 'Гулять' }
+];
+
+// Проверить и сгенерировать задачу для питомца
+function checkAndGeneratePetTask(pet) {
+  if (!pet || pet.isDead) return pet;
+  
+  const now = new Date();
+  const mskHour = (now.getUTCHours() + 3) % 24;
+  const today = now.toDateString();
+  
+  // Проверяем не истекла ли текущая задача
+  if (pet.currentTask) {
+    const deadline = new Date(pet.currentTask.deadline);
+    if (now > deadline) {
+      // Питомец погиб!
+      pet.isDead = true;
+      pet.diedAt = now.toISOString();
+      pet.currentTask = null;
+      return pet;
+    }
+    return pet; // Задача ещё активна
+  }
+  
+  // Генерируем задачи только с 4:00 до 18:00 МСК
+  if (mskHour < 4 || mskHour >= 18) return pet;
+  
+  // Сбрасываем счетчик если новый день
+  if (pet.lastTaskDate !== today) {
+    pet.tasksCompletedToday = 0;
+  }
+  
+  // Максимум 4 задачи в день
+  if ((pet.tasksCompletedToday || 0) >= 4) return pet;
+  
+  // Проверяем прошло ли достаточно времени с последней задачи (минимум 1 час)
+  const lastTaskTime = pet.lastTaskGeneratedAt ? new Date(pet.lastTaskGeneratedAt).getTime() : 0;
+  const hoursSinceLastTask = (Date.now() - lastTaskTime) / (1000 * 60 * 60);
+  
+  // Генерируем задачу с вероятностью, зависящей от времени
+  // Чем больше времени прошло, тем выше шанс
+  const chance = Math.min(0.8, hoursSinceLastTask * 0.15);
+  
+  if (Math.random() < chance) {
+    const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
+    const deadline = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 часа
+    
+    pet.currentTask = {
+      taskId: randomTask.id,
+      createdAt: now.toISOString(),
+      deadline: deadline.toISOString()
+    };
+    pet.lastTaskGeneratedAt = now.toISOString();
+  }
+  
+  return pet;
+}
+
 // Шаблон базы данных
 const DB_TEMPLATE = {
   users: [],
@@ -260,9 +325,29 @@ app.post('/api/db', async (req, res) => {
 // Получить пользователя по Telegram ID
 app.get('/api/user/:tgId', async (req, res) => {
   try {
-    const { data } = await getDB();
-    const user = data.users?.find(u => u.tgId === req.params.tgId);
-    res.json(user || null);
+    const { data, sha } = await getDB();
+    const userIdx = data.users?.findIndex(u => u.tgId === req.params.tgId);
+    
+    if (userIdx === -1 || userIdx === undefined) {
+      return res.json(null);
+    }
+    
+    let user = data.users[userIdx];
+    
+    // Проверяем и генерируем задачу для питомца
+    if (user.pet && !user.pet.isDead) {
+      const updatedPet = checkAndGeneratePetTask(user.pet);
+      
+      // Если что-то изменилось - сохраняем
+      if (JSON.stringify(updatedPet) !== JSON.stringify(user.pet)) {
+        user.pet = updatedPet;
+        data.users[userIdx] = user;
+        await saveDB(data, sha);
+        console.log('Pet task updated for user:', req.params.tgId);
+      }
+    }
+    
+    res.json(user);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

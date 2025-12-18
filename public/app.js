@@ -719,22 +719,6 @@ function renderPetAlive(pet) {
   const timeLeft = task ? getTaskTimeLeft(pet.currentTask) : null;
   const isUrgent = timeLeft && timeLeft.hours < 1;
   
-  // Определяем состояние питомца
-  let petState = 'idle';
-  let stateEmoji = '';
-  if (pet.lastAction) {
-    const timeSinceAction = Date.now() - new Date(pet.lastAction.time).getTime();
-    if (timeSinceAction < 3000) {
-      petState = pet.lastAction.type;
-      if (petState === 'feed') stateEmoji = '😋';
-      else if (petState === 'play') stateEmoji = '🎉';
-      else if (petState === 'sleep') stateEmoji = '😴';
-      else if (petState === 'wash') stateEmoji = '✨';
-      else if (petState === 'pet') stateEmoji = '🥰';
-      else if (petState === 'walk') stateEmoji = '🏃';
-    }
-  }
-  
   return `
     <div class="pet-page">
       <div class="pet-card">
@@ -748,9 +732,9 @@ function renderPetAlive(pet) {
         
         <div class="pet-container">
           <div class="pet-phrase ${phrase ? 'show' : ''}">${phrase || ''}</div>
-          <div class="pet-avatar ${petState !== 'idle' ? 'pet-action-' + petState : ''}" id="pet-avatar">
+          <div class="pet-avatar" id="pet-avatar">
             ${animal.emoji}
-            ${stateEmoji ? `<span class="pet-state-emoji">${stateEmoji}</span>` : ''}
+            <span class="pet-state-emoji"></span>
           </div>
           <div class="pet-shadow"></div>
         </div>
@@ -792,7 +776,7 @@ function renderPetAlive(pet) {
     </div>
     
     <!-- Модалка редактирования питомца -->
-    <div class="modal-overlay" id="pet-edit-modal">
+    <div class="modal" id="pet-edit-modal">
       <div class="modal-content pet-edit-modal">
         <div class="modal-header">
           <h3>✏️ Редактировать питомца</h3>
@@ -921,8 +905,36 @@ function setupPetEvents() {
       pet.lastAction = { type: action, time: new Date().toISOString() };
       currentUser.pet = pet;
       
-      // Перерисовываем для анимации
-      renderPage('pet');
+      // Показываем анимацию
+      const avatar = document.getElementById('pet-avatar');
+      const stateEmojis = { feed: '😋', play: '🎉', sleep: '😴', wash: '✨', pet: '🥰', walk: '🏃' };
+      
+      // Добавляем класс анимации
+      avatar?.classList.add('pet-action-' + action);
+      
+      // Добавляем эмодзи состояния
+      let stateEl = avatar?.querySelector('.pet-state-emoji');
+      if (!stateEl && avatar) {
+        stateEl = document.createElement('span');
+        stateEl.className = 'pet-state-emoji';
+        avatar.appendChild(stateEl);
+      }
+      if (stateEl) {
+        stateEl.textContent = stateEmojis[action] || '💕';
+        stateEl.classList.add('show');
+      }
+      
+      // Убираем через 2.5 секунды с анимацией
+      setTimeout(() => {
+        avatar?.classList.remove('pet-action-' + action);
+        if (stateEl) {
+          stateEl.classList.add('hide');
+          setTimeout(() => {
+            stateEl.classList.remove('show', 'hide');
+            stateEl.textContent = '';
+          }, 300);
+        }
+      }, 2500);
       
       const messages = {
         feed: 'Ням-ням! 😋',
@@ -1010,57 +1022,18 @@ function setupPetEvents() {
 }
 
 async function checkPetTask() {
+  // Задачи теперь генерируются на сервере при каждом запросе /api/user
+  // Здесь только проверяем не истекла ли задача на клиенте
   const pet = getPetData();
   if (!pet || pet.isDead) return;
   
-  // Проверяем не истекла ли текущая задача
   if (pet.currentTask) {
     const timeLeft = getTaskTimeLeft(pet.currentTask);
     if (!timeLeft) {
-      // Питомец погиб!
-      pet.isDead = true;
-      pet.diedAt = new Date().toISOString();
-      await api.put(`/api/user/${currentUser.tgId}`, { pet });
-      currentUser.pet = pet;
-      showToast('😢 Твой питомец погиб...');
-      renderPage('pet');
-      return;
-    }
-  }
-  
-  // Проверяем нужна ли новая задача (с 4:00 до 18:00 МСК)
-  const now = new Date();
-  const mskHour = (now.getUTCHours() + 3) % 24;
-  
-  if (mskHour >= 4 && mskHour < 18) {
-    const today = now.toDateString();
-    const tasksToday = pet.tasksCompletedToday || 0;
-    
-    // Максимум 4 задачи в день
-    if (!pet.currentTask && tasksToday < 4) {
-      // Проверяем прошло ли достаточно времени с последней задачи
-      const lastTaskTime = pet.lastTaskGeneratedAt ? new Date(pet.lastTaskGeneratedAt).getTime() : 0;
-      const hoursSinceLastTask = (Date.now() - lastTaskTime) / (1000 * 60 * 60);
-      
-      // Генерируем задачу с вероятностью, зависящей от времени
-      if (hoursSinceLastTask > 2 || Math.random() < 0.1) {
-        const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
-        const deadline = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 часа
-        
-        pet.currentTask = {
-          taskId: randomTask.id,
-          createdAt: new Date().toISOString(),
-          deadline: deadline.toISOString()
-        };
-        pet.lastTaskGeneratedAt = new Date().toISOString();
-        
-        // Сбрасываем счетчик если новый день
-        if (pet.lastTaskDate !== today) {
-          pet.tasksCompletedToday = 0;
-        }
-        
-        await api.put(`/api/user/${currentUser.tgId}`, { pet });
-        currentUser.pet = pet;
+      // Обновляем данные с сервера (там питомец уже помечен как мёртвый)
+      currentUser = await api.get(`/api/user/${currentUser.tgId}`);
+      if (currentUser?.pet?.isDead) {
+        showToast('😢 Твой питомец погиб...');
         renderPage('pet');
       }
     }

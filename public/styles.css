@@ -3159,12 +3159,10 @@ button, input, textarea {
   margin-left: 4px;
 }
 
-/* ===== ОДЕЖДА НА ПИТОМЦЕ (CSS СПРАЙТЫ) ===== */
+/* ===== ОДЕЖДА НА ПИТОМЦЕ (EMOJI) ===== */
 .pet-avatar-wrapper {
   position: relative;
   display: inline-block;
-  min-width: 120px;
-  min-height: 120px;
 }
 
 .pet-avatar-wrapper .pet-avatar {
@@ -3172,225 +3170,47 @@ button, input, textarea {
   display: block;
 }
 
-/* Базовые стили для всех спрайтов */
-.outfit-sprite {
+/* Базовые стили для одежды */
+.outfit-item {
   position: absolute;
   pointer-events: none;
   z-index: 10;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
-/* === ШАПКИ === */
-.outfit-sprite.outfit-hat {
-  top: -20px;
+/* Шапка - сверху по центру */
+.outfit-item.outfit-hat {
+  top: -10px;
   left: 50%;
   transform: translateX(-50%);
+  font-size: 36px;
   animation: hatBounce 3s ease-in-out infinite;
 }
 
 @keyframes hatBounce {
-  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); }
-  50% { transform: translateX(-50%) translateY(-6px) rotate(2deg); }
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
+  50% { transform: translateX(-50%) translateY(-5px) rotate(3deg); }
 }
 
-/* Корона */
-.sprite-hat_crown {
-  width: 50px;
-  height: 40px;
-}
-.sprite-hat_crown::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 18px;
-  bottom: 0;
-  background: linear-gradient(to bottom, #ffd700, #daa520);
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 3px 10px rgba(255,215,0,0.5), inset 0 2px 4px rgba(255,255,255,0.5);
-}
-.sprite-hat_crown::after {
-  content: '';
-  position: absolute;
-  width: 50px;
-  height: 30px;
-  top: 0;
-  left: 0;
-  background: linear-gradient(to bottom, #ffd700, #daa520);
-  clip-path: polygon(0% 100%, 10% 30%, 20% 100%, 30% 0%, 40% 100%, 50% 20%, 60% 100%, 70% 0%, 80% 100%, 90% 30%, 100% 100%);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+/* Аксессуар - справа сверху */
+.outfit-item.outfit-accessory {
+  top: 15px;
+  right: -15px;
+  font-size: 28px;
+  animation: accessoryPulse 2s ease-in-out infinite;
 }
 
-/* Кепка */
-.sprite-hat_cap {
-  width: 55px;
-  height: 30px;
-}
-.sprite-hat_cap::before {
-  content: '';
-  position: absolute;
-  width: 45px;
-  height: 22px;
-  background: linear-gradient(to bottom, var(--item-color, #3498db), color-mix(in srgb, var(--item-color, #3498db) 80%, black));
-  border-radius: 50% 50% 5px 5px;
-  left: 5px;
-  top: 0;
-  box-shadow: inset 0 -5px 10px rgba(0,0,0,0.2), 0 3px 8px rgba(0,0,0,0.3);
-}
-.sprite-hat_cap::after {
-  content: '';
-  position: absolute;
-  width: 50px;
-  height: 10px;
-  background: linear-gradient(to bottom, var(--item-color, #3498db), color-mix(in srgb, var(--item-color, #3498db) 70%, black));
-  bottom: 0;
-  left: 5px;
-  border-radius: 0 15px 5px 0;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+@keyframes accessoryPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
-/* Цилиндр */
-.sprite-hat_tophat {
-  width: 50px;
-  height: 50px;
-}
-.sprite-hat_tophat::before {
-  content: '';
-  position: absolute;
-  width: 50px;
-  height: 12px;
-  background: linear-gradient(to bottom, var(--item-color, #2c3e50), #1a1a2e);
-  bottom: 0;
-  border-radius: 4px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-}
-.sprite-hat_tophat::after {
-  content: '';
-  position: absolute;
-  width: 32px;
-  height: 40px;
-  background: linear-gradient(to right, var(--item-color, #2c3e50), #1a252f, var(--item-color, #2c3e50));
-  left: 9px;
-  top: 0;
-  border-radius: 6px 6px 0 0;
-  box-shadow: inset 0 5px 15px rgba(255,255,255,0.1), 0 3px 10px rgba(0,0,0,0.3);
-}
-
-/* Колпак праздничный */
-.sprite-hat_party {
-  width: 45px;
-  height: 55px;
-}
-.sprite-hat_party::before {
-  content: '';
-  position: absolute;
-  width: 45px;
-  height: 50px;
-  background: linear-gradient(135deg, 
-    var(--item-color, #e74c3c) 0%, 
-    var(--item-color, #e74c3c) 25%,
-    #f1c40f 25%,
-    #f1c40f 50%,
-    var(--item-color, #e74c3c) 50%,
-    var(--item-color, #e74c3c) 75%,
-    #3498db 75%
-  );
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
-}
-.sprite-hat_party::after {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  background: radial-gradient(circle, #f1c40f, #e67e22);
-  border-radius: 50%;
-  box-shadow: 0 0 10px #f1c40f, 0 0 20px #f39c12;
-  animation: starGlow 1.5s ease-in-out infinite;
-}
-@keyframes starGlow {
-  0%, 100% { box-shadow: 0 0 10px #f1c40f, 0 0 20px #f39c12; transform: translateX(-50%) scale(1); }
-  50% { box-shadow: 0 0 15px #f1c40f, 0 0 30px #f39c12; transform: translateX(-50%) scale(1.2); }
-}
-
-/* Ковбойская */
-.sprite-hat_cowboy {
-  width: 65px;
-  height: 40px;
-}
-.sprite-hat_cowboy::before {
-  content: '';
-  position: absolute;
-  width: 65px;
-  height: 12px;
-  background: linear-gradient(to bottom, var(--item-color, #8b4513), #5d3a1a);
-  bottom: 0;
-  border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-}
-.sprite-hat_cowboy::after {
-  content: '';
-  position: absolute;
-  width: 38px;
-  height: 28px;
-  background: linear-gradient(to bottom, var(--item-color, #8b4513), #6d4c1a);
-  left: 13px;
-  top: 0;
-  border-radius: 50% 50% 5px 5px;
-  box-shadow: inset 0 -10px 20px rgba(0,0,0,0.3), inset 0 5px 10px rgba(255,255,255,0.1);
-}
-
-/* Новогодняя шапка */
-.sprite-hat_santa {
-  width: 55px;
-  height: 50px;
-}
-.sprite-hat_santa::before {
-  content: '';
-  position: absolute;
-  width: 55px;
-  height: 14px;
-  background: linear-gradient(to bottom, #fff, #f0f0f0);
-  bottom: 0;
-  border-radius: 7px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8);
-}
-.sprite-hat_santa::after {
-  content: '';
-  position: absolute;
-  width: 45px;
-  height: 38px;
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 40%, #c0392b 100%);
-  left: 5px;
-  top: 5px;
-  border-radius: 5px 45px 5px 5px;
-  transform: skewX(-8deg);
-  box-shadow: inset -5px -5px 15px rgba(0,0,0,0.2), 0 3px 10px rgba(0,0,0,0.3);
-}
-.sprite-hat_santa .pompom {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  background: radial-gradient(circle at 30% 30%, #fff, #e8e8e8);
-  border-radius: 50%;
-  top: -2px;
-  right: -2px;
-  z-index: 5;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8);
-  animation: pompomBounce 2s ease-in-out infinite;
-}
-@keyframes pompomBounce {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.1) rotate(5deg); }
-}
-
-/* === ШАРФЫ === */
-.outfit-sprite.outfit-scarf {
-  top: 55%;
-  left: -25px;
+/* Шарф - слева по центру */
+.outfit-item.outfit-scarf {
+  top: 50%;
+  left: -20px;
   transform: translateY(-50%);
+  font-size: 32px;
   animation: scarfWave 4s ease-in-out infinite;
 }
 
@@ -3399,327 +3219,28 @@ button, input, textarea {
   50% { transform: translateY(-50%) rotate(5deg); }
 }
 
-.sprite-scarf_red, .sprite-scarf_rainbow, .sprite-scarf_gold {
-  width: 30px;
-  height: 70px;
-}
-
-.sprite-scarf_red::before,
-.sprite-scarf_rainbow::before,
-.sprite-scarf_gold::before {
-  content: '';
-  position: absolute;
-  width: 22px;
-  height: 60px;
-  background: var(--item-color, #e74c3c);
-  border-radius: 6px;
-  box-shadow: 3px 3px 10px rgba(0,0,0,0.25);
-  left: 4px;
-}
-
-.sprite-scarf_red::after,
-.sprite-scarf_gold::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 4px;
-  width: 22px;
-  height: 18px;
-  background: repeating-linear-gradient(
-    0deg,
-    var(--item-color, #e74c3c) 0px,
-    var(--item-color, #e74c3c) 4px,
-    transparent 4px,
-    transparent 7px
-  );
-  border-radius: 0 0 4px 4px;
-}
-
-.sprite-scarf_rainbow::before {
-  background: linear-gradient(
-    180deg,
-    #e74c3c 0%,
-    #f39c12 17%,
-    #f1c40f 33%,
-    #2ecc71 50%,
-    #3498db 67%,
-    #9b59b6 83%,
-    #e74c3c 100%
-  );
-}
-
-.sprite-scarf_rainbow::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 4px;
-  width: 22px;
-  height: 18px;
-  background: repeating-linear-gradient(
-    0deg,
-    #9b59b6 0px,
-    #9b59b6 4px,
-    transparent 4px,
-    transparent 7px
-  );
-  border-radius: 0 0 4px 4px;
-}
-
-.sprite-scarf_gold::before {
-  background: linear-gradient(to bottom, #f1c40f, #d4a00a);
-  box-shadow: 3px 3px 10px rgba(241,196,15,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
-}
-
-/* === ОБУВЬ === */
-.outfit-sprite.outfit-shoes {
-  bottom: -10px;
+/* Обувь - снизу по центру */
+.outfit-item.outfit-shoes {
+  bottom: -5px;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
-  gap: 15px;
+  font-size: 24px;
   animation: shoesWalk 1.5s ease-in-out infinite;
 }
 
 @keyframes shoesWalk {
   0%, 100% { transform: translateX(-50%) translateY(0); }
-  25% { transform: translateX(-52%) translateY(-2px); }
-  75% { transform: translateX(-48%) translateY(-2px); }
+  25% { transform: translateX(-55%) translateY(-2px); }
+  75% { transform: translateX(-45%) translateY(-2px); }
 }
 
-.sprite-shoes_sneakers,
-.sprite-shoes_boots,
-.sprite-shoes_slippers {
-  width: 60px;
-  height: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
 
-.sprite-shoes_sneakers .shoe-left,
-.sprite-shoes_sneakers .shoe-right {
-  display: block;
-  width: 18px;
-  height: 15px;
-  background: var(--item-color, #3498db);
-  border-radius: 8px 8px 3px 3px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-}
 
-.sprite-shoes_boots .shoe-left,
-.sprite-shoes_boots .shoe-right {
-  display: block;
-  width: 16px;
-  height: 20px;
-  background: linear-gradient(to bottom, var(--item-color, #8b4513), #5d3a1a);
-  border-radius: 5px 5px 3px 3px;
-}
 
-.sprite-shoes_slippers .shoe-left,
-.sprite-shoes_slippers .shoe-right {
-  display: block;
-  width: 18px;
-  height: 12px;
-  background: var(--item-color, #e91e63);
-  border-radius: 50% 50% 30% 30%;
-  box-shadow: inset 0 -3px 6px rgba(255,255,255,0.3);
-}
 
-/* === АКСЕССУАРЫ === */
-.outfit-sprite.outfit-accessory {
-  top: 25px;
-  right: -20px;
-  animation: accessoryPulse 2s ease-in-out infinite;
-}
 
-@keyframes accessoryPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
 
-/* Очки */
-.sprite-acc_glasses {
-  width: 60px;
-  height: 22px;
-  top: 35px;
-  right: auto;
-  left: 50%;
-  transform: translateX(-50%);
-  animation: none !important;
-}
-.sprite-acc_glasses::before {
-  content: '';
-  position: absolute;
-  width: 22px;
-  height: 18px;
-  border: 3px solid var(--item-color, #2c3e50);
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(0,0,0,0.15), rgba(0,0,0,0.05));
-  left: 0;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
-}
-.sprite-acc_glasses::after {
-  content: '';
-  position: absolute;
-  width: 22px;
-  height: 18px;
-  border: 3px solid var(--item-color, #2c3e50);
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(0,0,0,0.15), rgba(0,0,0,0.05));
-  right: 0;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
-}
 
-/* Бантик */
-.sprite-acc_bow {
-  width: 40px;
-  height: 30px;
-}
-.sprite-acc_bow::before {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 22px;
-  background: linear-gradient(135deg, var(--item-color, #e91e63), color-mix(in srgb, var(--item-color, #e91e63) 70%, black));
-  border-radius: 50%;
-  top: 4px;
-  left: 0;
-  transform: rotate(-20deg);
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-}
-.sprite-acc_bow::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 22px;
-  background: linear-gradient(135deg, var(--item-color, #e91e63), color-mix(in srgb, var(--item-color, #e91e63) 70%, black));
-  border-radius: 50%;
-  top: 4px;
-  right: 0;
-  transform: rotate(20deg);
-  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-}
 
-/* Медаль */
-.sprite-acc_medal {
-  width: 32px;
-  height: 45px;
-}
-.sprite-acc_medal::before {
-  content: '';
-  position: absolute;
-  width: 10px;
-  height: 22px;
-  background: linear-gradient(to bottom, #3498db, #2980b9);
-  left: 11px;
-  top: 0;
-  border-radius: 2px 2px 0 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-.sprite-acc_medal::after {
-  content: '';
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #f1c40f 0%, #f39c12 50%, #d68910 100%);
-  border-radius: 50%;
-  bottom: 0;
-  left: 2px;
-  box-shadow: 0 4px 12px rgba(241,196,15,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
-}
 
-/* Сердечко */
-.sprite-acc_heart {
-  width: 35px;
-  height: 32px;
-}
-.sprite-acc_heart::before {
-  content: '';
-  position: absolute;
-  width: 35px;
-  height: 32px;
-  background: linear-gradient(135deg, #ff6b6b, var(--item-color, #e74c3c), #c0392b);
-  clip-path: path('M17.5,30 C17.5,30 2,20 2,10 C2,4 7,0 12,0 C14.5,0 17,1.5 17.5,4 C18,1.5 20.5,0 23,0 C28,0 33,4 33,10 C33,20 17.5,30 17.5,30 Z');
-  animation: heartBeat 1s ease-in-out infinite;
-  filter: drop-shadow(0 3px 8px rgba(231,76,60,0.5));
-}
 
-@keyframes heartBeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-}
-
-/* Дополнительные элементы спрайтов */
-
-/* Центральный узелок бантика */
-.sprite-acc_bow .bow-center {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--item-color, #e91e63);
-  border-radius: 50%;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  z-index: 2;
-}
-
-/* Звезда на медали */
-.sprite-acc_medal .medal-star {
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 16px;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  z-index: 2;
-}
-.sprite-acc_medal .medal-star::before {
-  content: '★';
-}
-
-/* Мостик для очков */
-.sprite-acc_glasses .glasses-bridge {
-  position: absolute;
-  width: 10px;
-  height: 4px;
-  background: var(--item-color, #2c3e50);
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 2px;
-  z-index: 2;
-}
-
-/* Улучшенная анимация для обуви */
-.outfit-shoes .shoe-left {
-  animation: shoeLeftStep 1s ease-in-out infinite;
-}
-.outfit-shoes .shoe-right {
-  animation: shoeRightStep 1s ease-in-out infinite;
-}
-
-@keyframes shoeLeftStep {
-  0%, 100% { transform: translateY(0); }
-  25% { transform: translateY(-3px); }
-}
-@keyframes shoeRightStep {
-  0%, 100% { transform: translateY(0); }
-  75% { transform: translateY(-3px); }
-}
-
-/* Блеск на короне */
-.sprite-hat_crown .crown-gem {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle, #ff6b6b, #c0392b);
-  border-radius: 50%;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  box-shadow: 0 0 8px #ff6b6b;
-  z-index: 2;
-}

@@ -770,46 +770,28 @@ function renderPetOutfitOnPet(pet) {
   if (outfit.hat) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.hat);
     if (item) {
-      const colorStyle = item.color ? `--item-color: ${item.color};` : '';
-      let innerContent = '';
-      if (item.id === 'hat_santa') {
-        innerContent = '<div class="pompom"></div>';
-      } else if (item.id === 'hat_crown') {
-        innerContent = '<div class="crown-gem"></div>';
-      }
-      items.push(`<div class="outfit-sprite outfit-hat sprite-${item.id}" style="${colorStyle}">${innerContent}</div>`);
+      items.push(`<div class="outfit-item outfit-hat">${item.emoji}</div>`);
     }
   }
   // Аксессуар справа
   if (outfit.accessory) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.accessory);
     if (item) {
-      const colorStyle = item.color ? `--item-color: ${item.color};` : '';
-      let innerContent = '';
-      if (item.id === 'acc_bow') {
-        innerContent = '<div class="bow-center"></div>';
-      } else if (item.id === 'acc_medal') {
-        innerContent = '<div class="medal-star"></div>';
-      } else if (item.id === 'acc_glasses') {
-        innerContent = '<div class="glasses-bridge"></div>';
-      }
-      items.push(`<div class="outfit-sprite outfit-accessory sprite-${item.id}" style="${colorStyle}">${innerContent}</div>`);
+      items.push(`<div class="outfit-item outfit-accessory">${item.emoji}</div>`);
     }
   }
   // Шарф слева
   if (outfit.scarf) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.scarf);
     if (item) {
-      const colorStyle = item.color === 'rainbow' ? '--item-color: #e74c3c;' : `--item-color: ${item.color};`;
-      items.push(`<div class="outfit-sprite outfit-scarf sprite-${item.id}" style="${colorStyle}"></div>`);
+      items.push(`<div class="outfit-item outfit-scarf">${item.emoji}</div>`);
     }
   }
   // Обувь снизу
   if (outfit.shoes) {
     const item = PET_SHOP_ITEMS.find(i => i.id === outfit.shoes);
     if (item) {
-      const colorStyle = item.color ? `--item-color: ${item.color};` : '';
-      items.push(`<div class="outfit-sprite outfit-shoes sprite-${item.id}" style="${colorStyle}"><span class="shoe-left"></span><span class="shoe-right"></span></div>`);
+      items.push(`<div class="outfit-item outfit-shoes">${item.emoji}</div>`);
     }
   }
   
@@ -1044,9 +1026,57 @@ function getTaskTimeLeft(task) {
   return { hours, minutes };
 }
 
+// Обновление таймера задачи питомца в реальном времени
+function updatePetTimer() {
+  const pet = getPetData();
+  if (!pet || !pet.currentTask) return;
+  
+  const timeLeft = getTaskTimeLeft(pet.currentTask);
+  const timerEl = document.querySelector('.task-timer');
+  const taskEl = document.querySelector('.pet-task');
+  
+  if (!timerEl) return;
+  
+  if (!timeLeft) {
+    // Время вышло - питомец погиб
+    timerEl.textContent = '⏰ Время вышло!';
+    timerEl.classList.add('urgent');
+    taskEl?.classList.add('urgent');
+    
+    // Обновляем данные с сервера
+    setTimeout(async () => {
+      currentUser = await api.get(`/api/user/${currentUser.tgId}`);
+      renderPage('pet');
+    }, 1000);
+    return;
+  }
+  
+  timerEl.textContent = `⏰ ${timeLeft.hours}ч ${timeLeft.minutes}м`;
+  
+  // Добавляем urgent класс если меньше часа
+  if (timeLeft.hours < 1) {
+    timerEl.classList.add('urgent');
+    taskEl?.classList.add('urgent');
+  }
+}
+
 let selectedPetId = null;
+let petTimerInterval = null;
 
 function setupPetEvents() {
+  // Очищаем предыдущий таймер если был
+  if (petTimerInterval) {
+    clearInterval(petTimerInterval);
+    petTimerInterval = null;
+  }
+  
+  // Запускаем обновление таймера каждую минуту
+  const pet = getPetData();
+  if (pet && pet.currentTask) {
+    updatePetTimer();
+    petTimerInterval = setInterval(updatePetTimer, 60000); // каждую минуту
+  }
+  
   // Выбор питомца
   document.querySelectorAll('.pet-select-item').forEach(el => {
     el.onclick = () => {
@@ -1088,17 +1118,25 @@ function setupPetEvents() {
     
     const task = PET_TASKS.find(t => t.id === pet.currentTask.taskId);
     
-    // Анимация
+    // Сохраняем индекс выполненной задачи
+    const taskIndex = pet.currentTask.taskIndex ?? (pet.completedTasksToday || 0);
+    
+    // Обновляем данные питомца
     pet.lastAction = { type: pet.currentTask.taskId, time: new Date().toISOString() };
     pet.currentTask = null;
-    pet.tasksCompletedToday = (pet.tasksCompletedToday || 0) + 1;
+    pet.completedTasksToday = taskIndex + 1; // Увеличиваем счётчик выполненных задач
     
     // Обновляем streak если это первая задача за день
     const today = new Date().toDateString();
     if (pet.lastTaskDate !== today) {
       pet.streak = (pet.streak || 0) + 1;
       pet.lastTaskDate = today;
-      pet.tasksCompletedToday = 1;
+    }
+    
+    // Очищаем таймер
+    if (petTimerInterval) {
+      clearInterval(petTimerInterval);
+      petTimerInterval = null;
     }
     
     await api.put(`/api/user/${currentUser.tgId}`, { pet });

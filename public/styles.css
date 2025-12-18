@@ -3350,54 +3350,365 @@ button, input, textarea {
   margin-left: 4px;
 }
 
-/* ===== ОДЕЖДА НА ПИТОМЦЕ ===== */
+/* ===== ОДЕЖДА НА ПИТОМЦЕ (CSS АРТ) ===== */
 .pet-avatar-wrapper {
   position: relative;
   display: inline-block;
 }
 
-/* Одежда на питомце */
-.outfit-on-pet {
+.pet-outfit {
   position: absolute;
   pointer-events: none;
-  filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
-  line-height: 1;
 }
 
-/* Шапка */
-.outfit-hat-on {
-  top: -5px;
+/* === ПОЗИЦИИ === */
+.pet-outfit-hat {
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 35px;
   z-index: 10;
 }
 
-/* Аксессуар */
-.outfit-acc-on {
-  top: 30px;
+.pet-outfit-acc {
+  top: 35px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 28px;
   z-index: 15;
 }
 
-/* Шарф */
-.outfit-scarf-on {
-  bottom: 15px;
+.pet-outfit-scarf {
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 30px;
   z-index: 3;
 }
 
-/* Обувь */
-.outfit-shoes-on {
-  bottom: -8px;
+.pet-outfit-shoes {
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 24px;
   z-index: 1;
+}
+
+/* === ШАПКИ === */
+
+/* Корона */
+.hat_crown {
+  width: 50px;
+  height: 35px;
+  background: linear-gradient(to bottom, #ffd700, #daa520);
+  clip-path: polygon(0% 100%, 10% 40%, 25% 80%, 40% 30%, 50% 70%, 60% 30%, 75% 80%, 90% 40%, 100% 100%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Кепка */
+.hat_cap {
+  width: 55px;
+  height: 25px;
+  background: #2980b9;
+  border-radius: 50px 50px 0 0;
+  position: relative;
+}
+.hat_cap::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: -10px;
+  width: 35px;
+  height: 12px;
+  background: #1a5276;
+  border-radius: 0 0 20px 5px;
+}
+
+/* Цилиндр */
+.hat_tophat {
+  width: 40px;
+  height: 45px;
+  background: linear-gradient(90deg, #1a1a1a, #333, #1a1a1a);
+  border-radius: 5px 5px 0 0;
+  position: relative;
+}
+.hat_tophat::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: -10px;
+  width: 60px;
+  height: 12px;
+  background: #222;
+  border-radius: 5px;
+}
+.hat_tophat::after {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: #c0392b;
+}
+
+/* Колпак */
+.hat_party {
+  width: 0;
+  height: 0;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  border-bottom: 50px solid #e91e63;
+  position: relative;
+}
+.hat_party::before {
+  content: '';
+  position: absolute;
+  top: 50px;
+  left: -25px;
+  width: 50px;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, #ffeb3b, #ffeb3b 8px, #e91e63 8px, #e91e63 16px);
+}
+.hat_party::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  background: #ffeb3b;
+  border-radius: 50%;
+}
+
+/* Ковбойская */
+.hat_cowboy {
+  width: 70px;
+  height: 20px;
+  background: #8b4513;
+  border-radius: 50%;
+  position: relative;
+}
+.hat_cowboy::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 18px;
+  width: 34px;
+  height: 25px;
+  background: #a0522d;
+  border-radius: 50% 50% 20% 20%;
+}
+.hat_cowboy::after {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 22px;
+  width: 26px;
+  height: 6px;
+  background: #654321;
+}
+
+/* Новогодняя */
+.hat_santa {
+  width: 50px;
+  height: 40px;
+  background: #c0392b;
+  border-radius: 0 60px 0 0;
+  position: relative;
+}
+.hat_santa::before {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: -5px;
+  width: 60px;
+  height: 15px;
+  background: white;
+  border-radius: 10px;
+}
+.hat_santa::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+}
+
+/* === ШАРФЫ === */
+
+.scarf_red, .scarf_blue, .scarf_green {
+  width: 60px;
+  height: 20px;
+  border-radius: 10px;
+  position: relative;
+}
+.scarf_red { background: linear-gradient(180deg, #e74c3c, #c0392b); }
+.scarf_blue { background: linear-gradient(180deg, #3498db, #2980b9); }
+.scarf_green { background: linear-gradient(180deg, #27ae60, #1e8449); }
+
+.scarf_red::before, .scarf_blue::before, .scarf_green::before {
+  content: '';
+  position: absolute;
+  bottom: -25px;
+  left: 8px;
+  width: 15px;
+  height: 30px;
+  border-radius: 0 0 8px 8px;
+}
+.scarf_red::before { background: #c0392b; }
+.scarf_blue::before { background: #2980b9; }
+.scarf_green::before { background: #1e8449; }
+
+.scarf_red::after, .scarf_blue::after, .scarf_green::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  right: 10px;
+  width: 12px;
+  height: 25px;
+  border-radius: 0 0 6px 6px;
+}
+.scarf_red::after { background: #e74c3c; }
+.scarf_blue::after { background: #3498db; }
+.scarf_green::after { background: #27ae60; }
+
+/* === ОБУВЬ === */
+
+.shoes_sneakers, .shoes_boots, .shoes_slippers {
+  display: flex;
+  gap: 15px;
+}
+.shoes_sneakers::before, .shoes_sneakers::after,
+.shoes_boots::before, .shoes_boots::after,
+.shoes_slippers::before, .shoes_slippers::after {
+  content: '';
+  display: block;
+}
+
+/* Кроссовки */
+.shoes_sneakers::before, .shoes_sneakers::after {
+  width: 22px;
+  height: 18px;
+  background: linear-gradient(180deg, white 50%, #3498db 50%);
+  border-radius: 12px 12px 5px 5px;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+}
+
+/* Сапоги */
+.shoes_boots::before, .shoes_boots::after {
+  width: 20px;
+  height: 28px;
+  background: linear-gradient(180deg, #5d4037, #3e2723);
+  border-radius: 5px 5px 8px 8px;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+}
+
+/* Тапочки */
+.shoes_slippers::before, .shoes_slippers::after {
+  width: 24px;
+  height: 14px;
+  background: linear-gradient(180deg, #f48fb1, #ec407a);
+  border-radius: 50% 50% 30% 30%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* === АКСЕССУАРЫ === */
+
+/* Очки */
+.acc_glasses {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.acc_glasses::before, .acc_glasses::after {
+  content: '';
+  width: 22px;
+  height: 18px;
+  background: rgba(0,0,0,0.8);
+  border: 3px solid #333;
+  border-radius: 5px;
+}
+
+/* Бантик */
+.acc_bow {
+  width: 35px;
+  height: 25px;
+  position: relative;
+}
+.acc_bow::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 15px;
+  height: 15px;
+  background: #e91e63;
+  border-radius: 50% 0 50% 50%;
+  transform: rotate(-15deg);
+}
+.acc_bow::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 5px;
+  width: 15px;
+  height: 15px;
+  background: #e91e63;
+  border-radius: 0 50% 50% 50%;
+  transform: rotate(15deg);
+}
+
+/* Медаль */
+.acc_medal {
+  width: 30px;
+  height: 45px;
+  position: relative;
+}
+.acc_medal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 15px;
+  background: #3498db;
+  clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+}
+.acc_medal::after {
+  content: '★';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #ffd700, #ffa000);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #b8860b;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Бусы */
+.acc_necklace {
+  width: 50px;
+  height: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+.acc_necklace::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #9c27b0;
+  border-radius: 50%;
+  box-shadow: -16px 0 0 #e91e63, 16px 0 0 #2196f3;
 }
 
 

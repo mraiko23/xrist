@@ -825,35 +825,26 @@ function getCurrentSeason() {
 
 function renderPetOutfitOnPet(pet) {
   const outfit = pet.outfit || {};
-  const items = [];
+  let html = '';
   
-  // Маппинг ID на эмодзи
-  const itemEmojis = {
-    'hat_crown': '👑', 'hat_cap': '🧢', 'hat_tophat': '🎩',
-    'hat_party': '🥳', 'hat_cowboy': '🤠', 'hat_santa': '🎅',
-    'scarf_red': '🧣', 'scarf_blue': '🧣', 'scarf_green': '🧣',
-    'shoes_sneakers': '👟', 'shoes_boots': '👢', 'shoes_slippers': '🥿',
-    'acc_glasses': '🕶️', 'acc_bow': '🎀', 'acc_medal': '🏅', 'acc_necklace': '📿'
-  };
-  
-  // Шапка сверху
-  if (outfit.hat && itemEmojis[outfit.hat]) {
-    items.push(`<div class="outfit-on-pet outfit-hat-on">${itemEmojis[outfit.hat]}</div>`);
+  // Шапка
+  if (outfit.hat) {
+    html += `<div class="pet-outfit pet-outfit-hat ${outfit.hat}"></div>`;
   }
-  // Аксессуар на лице
-  if (outfit.accessory && itemEmojis[outfit.accessory]) {
-    items.push(`<div class="outfit-on-pet outfit-acc-on">${itemEmojis[outfit.accessory]}</div>`);
+  // Аксессуар
+  if (outfit.accessory) {
+    html += `<div class="pet-outfit pet-outfit-acc ${outfit.accessory}"></div>`;
   }
-  // Шарф на шее
-  if (outfit.scarf && itemEmojis[outfit.scarf]) {
-    items.push(`<div class="outfit-on-pet outfit-scarf-on">${itemEmojis[outfit.scarf]}</div>`);
+  // Шарф
+  if (outfit.scarf) {
+    html += `<div class="pet-outfit pet-outfit-scarf ${outfit.scarf}"></div>`;
   }
-  // Обувь снизу
-  if (outfit.shoes && itemEmojis[outfit.shoes]) {
-    items.push(`<div class="outfit-on-pet outfit-shoes-on">${itemEmojis[outfit.shoes]}</div>`);
+  // Обувь
+  if (outfit.shoes) {
+    html += `<div class="pet-outfit pet-outfit-shoes ${outfit.shoes}"></div>`;
   }
   
-  return items.join('');
+  return html;
 }
 
 function renderPetAlive(pet) {

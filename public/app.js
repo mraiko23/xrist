@@ -684,28 +684,28 @@ const PET_PHRASES = [
   '💭 Мне повезло с тобой!'
 ];
 
-// Магазин одежды для питомца (emoji для магазина, sprite для отображения на питомце)
+// Магазин одежды для питомца
 const PET_SHOP_ITEMS = [
   // Шапки
-  { id: 'hat_crown', emoji: '👑', name: 'Корона', type: 'hat', price: 3, color: '#ffd700' },
-  { id: 'hat_cap', emoji: '🧢', name: 'Кепка', type: 'hat', price: 2, color: '#3498db' },
-  { id: 'hat_tophat', emoji: '🎩', name: 'Цилиндр', type: 'hat', price: 4, color: '#2c3e50' },
-  { id: 'hat_party', emoji: '🎊', name: 'Колпак', type: 'hat', price: 2, color: '#e74c3c' },
-  { id: 'hat_cowboy', emoji: '🤠', name: 'Ковбойская', type: 'hat', price: 3, color: '#8b4513' },
-  { id: 'hat_santa', emoji: '🎄', name: 'Новогодняя', type: 'hat', price: 5, color: '#c0392b' },
-  // Шарфы
-  { id: 'scarf_red', emoji: '🧣', name: 'Красный шарф', type: 'scarf', price: 2, color: '#e74c3c' },
-  { id: 'scarf_rainbow', emoji: '🌈', name: 'Радужный', type: 'scarf', price: 4, color: 'rainbow' },
-  { id: 'scarf_gold', emoji: '✨', name: 'Золотой', type: 'scarf', price: 5, color: '#f1c40f' },
+  { id: 'hat_crown', emoji: '👑', name: 'Корона', type: 'hat', price: 3 },
+  { id: 'hat_cap', emoji: '🧢', name: 'Кепка', type: 'hat', price: 2 },
+  { id: 'hat_tophat', emoji: '🎩', name: 'Цилиндр', type: 'hat', price: 4 },
+  { id: 'hat_party', emoji: '🥳', name: 'Колпак', type: 'hat', price: 2 },
+  { id: 'hat_cowboy', emoji: '🤠', name: 'Ковбойская', type: 'hat', price: 3 },
+  { id: 'hat_santa', emoji: '🎅', name: 'Новогодняя', type: 'hat', price: 5 },
+  // Шарфы  
+  { id: 'scarf_red', emoji: '🧣', name: 'Красный шарф', type: 'scarf', price: 2 },
+  { id: 'scarf_blue', emoji: '🧣', name: 'Синий шарф', type: 'scarf', price: 2 },
+  { id: 'scarf_green', emoji: '🧣', name: 'Зелёный шарф', type: 'scarf', price: 3 },
   // Обувь
-  { id: 'shoes_sneakers', emoji: '👟', name: 'Кроссовки', type: 'shoes', price: 3, color: '#3498db' },
-  { id: 'shoes_boots', emoji: '👢', name: 'Сапожки', type: 'shoes', price: 3, color: '#8b4513' },
-  { id: 'shoes_slippers', emoji: '🥿', name: 'Тапочки', type: 'shoes', price: 2, color: '#e91e63' },
+  { id: 'shoes_sneakers', emoji: '👟', name: 'Кроссовки', type: 'shoes', price: 3 },
+  { id: 'shoes_boots', emoji: '👢', name: 'Сапожки', type: 'shoes', price: 3 },
+  { id: 'shoes_slippers', emoji: '🥿', name: 'Тапочки', type: 'shoes', price: 2 },
   // Аксессуары
-  { id: 'acc_glasses', emoji: '🕶️', name: 'Очки', type: 'accessory', price: 2, color: '#2c3e50' },
-  { id: 'acc_bow', emoji: '🎀', name: 'Бантик', type: 'accessory', price: 1, color: '#e91e63' },
-  { id: 'acc_medal', emoji: '🏅', name: 'Медаль', type: 'accessory', price: 4, color: '#f1c40f' },
-  { id: 'acc_heart', emoji: '💖', name: 'Сердечко', type: 'accessory', price: 2, color: '#e74c3c' }
+  { id: 'acc_glasses', emoji: '🕶️', name: 'Очки', type: 'accessory', price: 2 },
+  { id: 'acc_bow', emoji: '🎀', name: 'Бантик', type: 'accessory', price: 1 },
+  { id: 'acc_medal', emoji: '🏅', name: 'Медаль', type: 'accessory', price: 4 },
+  { id: 'acc_necklace', emoji: '📿', name: 'Бусы', type: 'accessory', price: 2 }
 ];
 
 function getPetData() {

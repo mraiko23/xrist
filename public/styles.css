@@ -3159,15 +3159,19 @@ button, input, textarea {
   margin-left: 4px;
 }
 
-/* ===== ОДЕЖДА НА ПИТОМЦЕ (EMOJI) ===== */
+/* ===== ОДЕЖДА НА ПИТОМЦЕ ===== */
 .pet-avatar-wrapper {
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
 }
 
 .pet-avatar-wrapper .pet-avatar {
   position: relative;
-  display: block;
+  z-index: 1;
 }
 
 /* Базовые стили для одежды */
@@ -3176,41 +3180,43 @@ button, input, textarea {
   pointer-events: none;
   z-index: 10;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  line-height: 1;
 }
 
-/* Шапка - сверху по центру */
+/* Шапка - сверху */
 .outfit-item.outfit-hat {
-  top: -10px;
+  top: 5px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 36px;
+  font-size: 32px;
   animation: hatBounce 3s ease-in-out infinite;
 }
 
 @keyframes hatBounce {
-  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-3deg); }
-  50% { transform: translateX(-50%) translateY(-5px) rotate(3deg); }
+  0%, 100% { transform: translateX(-50%) translateY(0) rotate(-2deg); }
+  50% { transform: translateX(-50%) translateY(-4px) rotate(2deg); }
 }
 
-/* Аксессуар - справа сверху */
+/* Аксессуар - справа */
 .outfit-item.outfit-accessory {
-  top: 15px;
-  right: -15px;
-  font-size: 28px;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  font-size: 24px;
   animation: accessoryPulse 2s ease-in-out infinite;
 }
 
 @keyframes accessoryPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.1); }
 }
 
-/* Шарф - слева по центру */
+/* Шарф - слева */
 .outfit-item.outfit-scarf {
   top: 50%;
-  left: -20px;
+  left: 5px;
   transform: translateY(-50%);
-  font-size: 32px;
+  font-size: 28px;
   animation: scarfWave 4s ease-in-out infinite;
 }
 
@@ -3219,19 +3225,18 @@ button, input, textarea {
   50% { transform: translateY(-50%) rotate(5deg); }
 }
 
-/* Обувь - снизу по центру */
+/* Обувь - снизу */
 .outfit-item.outfit-shoes {
-  bottom: -5px;
+  bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 24px;
+  font-size: 22px;
   animation: shoesWalk 1.5s ease-in-out infinite;
 }
 
 @keyframes shoesWalk {
   0%, 100% { transform: translateX(-50%) translateY(0); }
-  25% { transform: translateX(-55%) translateY(-2px); }
-  75% { transform: translateX(-45%) translateY(-2px); }
+  50% { transform: translateX(-50%) translateY(-3px); }
 }
 
 

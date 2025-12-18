@@ -124,28 +124,25 @@ function checkAndGeneratePetTask(pet) {
   
   const taskMskMinutes = nextTaskTime.hour * 60 + nextTaskTime.minute;
   
-  // Проверяем не была ли эта задача уже активирована ранее
-  // Используем индекс задачи чтобы не активировать одну и ту же задачу повторно
-  const lastActivatedTaskIndex = pet.lastActivatedTaskIndex ?? -1;
-  
-  // Если текущее время >= запланированного времени задачи И эта задача ещё не была активирована
-  if (currentMskMinutes >= taskMskMinutes && completedToday > lastActivatedTaskIndex) {
-    const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
-    
-    // Дедлайн = текущее время + 4 часа (а не от времени задачи)
-    // Это даёт пользователю полные 4 часа с момента когда он увидел задачу
-    const deadline = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-    
-    pet.currentTask = {
-      taskId: randomTask.id,
-      createdAt: now.toISOString(),
-      deadline: deadline.toISOString(),
-      taskIndex: completedToday
-    };
-    pet.lastActivatedTaskIndex = completedToday;
-    changed = true;
-    console.log(`Task ${randomTask.id} activated for pet at ${nextTaskTime.hour}:${nextTaskTime.minute} MSK, deadline: ${deadline.toISOString()}`);
+  // Если текущее время ещё не наступило для следующей задачи - не активируем
+  if (currentMskMinutes < taskMskMinutes) {
+    return { pet, changed };
   }
+  
+  // Время наступило - активируем задачу
+  const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
+  
+  // Дедлайн = текущее время + 4 часа
+  const deadline = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+  
+  pet.currentTask = {
+    taskId: randomTask.id,
+    createdAt: now.toISOString(),
+    deadline: deadline.toISOString(),
+    taskIndex: completedToday
+  };
+  changed = true;
+  console.log(`Task ${randomTask.id} activated for pet at ${nextTaskTime.hour}:${nextTaskTime.minute} MSK, deadline: ${deadline.toISOString()}`);
   
   return { pet, changed };
 }

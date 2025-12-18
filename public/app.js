@@ -252,12 +252,7 @@ function renderProgress() {
         </div>
       </div>
       
-      ${canClaimGift ? `
-        <div class="gift-alert-small">
-          <span>🎁</span>
-          <span>У тебя есть подарок!</span>
-        </div>
-      ` : ''}
+
     </div>
     
     <!-- Полноэкранный модал поздравления -->

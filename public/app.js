@@ -827,21 +827,140 @@ function renderPetOutfitOnPet(pet) {
   const outfit = pet.outfit || {};
   let html = '';
   
+  // SVG спрайты для каждого предмета
+  const svgSprites = {
+    // Шапки
+    hat_crown: `<svg viewBox="0 0 60 40" class="pet-outfit pet-outfit-hat">
+      <defs><linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFD700"/><stop offset="100%" style="stop-color:#FFA500"/></linearGradient></defs>
+      <path d="M5 38 L10 15 L18 28 L25 8 L30 25 L35 8 L42 28 L50 15 L55 38 Z" fill="url(#gold)" stroke="#DAA520" stroke-width="2"/>
+      <circle cx="25" cy="12" r="4" fill="#E53935"/><circle cx="35" cy="12" r="4" fill="#1E88E5"/><circle cx="30" cy="20" r="3" fill="#43A047"/>
+    </svg>`,
+    hat_cap: `<svg viewBox="0 0 60 35" class="pet-outfit pet-outfit-hat">
+      <defs><linearGradient id="cap" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#42A5F5"/><stop offset="100%" style="stop-color:#1976D2"/></linearGradient></defs>
+      <ellipse cx="30" cy="28" rx="28" ry="8" fill="#1565C0"/>
+      <path d="M5 28 Q5 10 30 8 Q55 10 55 28 Z" fill="url(#cap)"/>
+      <path d="M5 28 L-5 32 Q-8 35 0 35 L20 30" fill="#1565C0"/>
+    </svg>`,
+    hat_tophat: `<svg viewBox="0 0 55 50" class="pet-outfit pet-outfit-hat">
+      <defs><linearGradient id="tophat" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#212121"/><stop offset="50%" style="stop-color:#424242"/><stop offset="100%" style="stop-color:#212121"/></linearGradient></defs>
+      <ellipse cx="27" cy="46" rx="26" ry="6" fill="#1a1a1a"/>
+      <rect x="12" y="8" width="30" height="38" rx="3" fill="url(#tophat)"/>
+      <rect x="12" y="30" width="30" height="8" fill="#B71C1C"/>
+      <ellipse cx="27" cy="8" rx="15" ry="4" fill="#333"/>
+    </svg>`,
+    hat_party: `<svg viewBox="0 0 50 55" class="pet-outfit pet-outfit-hat">
+      <defs><linearGradient id="party" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#EC407A"/><stop offset="100%" style="stop-color:#AD1457"/></linearGradient></defs>
+      <polygon points="25,2 45,52 5,52" fill="url(#party)"/>
+      <line x1="10" y1="45" x2="40" y2="45" stroke="#FFEB3B" stroke-width="4"/>
+      <line x1="15" y1="35" x2="35" y2="35" stroke="#4FC3F7" stroke-width="3"/>
+      <circle cx="25" cy="2" r="6" fill="#FFEB3B"/><circle cx="25" cy="2" r="3" fill="#FF7043"/>
+    </svg>`,
+    hat_cowboy: `<svg viewBox="0 0 70 40" class="pet-outfit pet-outfit-hat">
+      <defs><linearGradient id="cowboy" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#A1887F"/><stop offset="100%" style="stop-color:#6D4C41"/></linearGradient></defs>
+      <ellipse cx="35" cy="35" rx="34" ry="8" fill="#5D4037"/>
+      <path d="M15 35 Q15 15 35 12 Q55 15 55 35 Z" fill="url(#cowboy)"/>
+      <ellipse cx="35" cy="18" rx="12" ry="4" fill="#4E342E"/>
+      <rect x="23" y="22" width="24" height="5" fill="#3E2723"/>
+    </svg>`,
+    hat_santa: `<svg viewBox="0 0 55 45" class="pet-outfit pet-outfit-hat">
+      <defs><linearGradient id="santa" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#F44336"/><stop offset="100%" style="stop-color:#C62828"/></linearGradient></defs>
+      <path d="M5 40 Q5 35 10 35 L45 35 Q50 35 50 40 L50 43 Q50 45 45 45 L10 45 Q5 45 5 43 Z" fill="white"/>
+      <path d="M10 35 Q15 5 45 15 Q50 20 48 35 Z" fill="url(#santa)"/>
+      <circle cx="48" cy="12" r="8" fill="white"/>
+    </svg>`,
+    
+    // Шарфы
+    scarf_red: `<svg viewBox="0 0 70 45" class="pet-outfit pet-outfit-scarf">
+      <defs><linearGradient id="scarfR" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#EF5350"/><stop offset="100%" style="stop-color:#C62828"/></linearGradient></defs>
+      <rect x="5" y="5" width="60" height="14" rx="7" fill="url(#scarfR)"/>
+      <path d="M12 19 L12 42 Q12 45 15 45 L20 45 Q23 45 23 42 L23 22" fill="#C62828"/>
+      <line x1="12" y1="38" x2="23" y2="38" stroke="#B71C1C" stroke-width="2"/>
+      <line x1="12" y1="32" x2="23" y2="32" stroke="#B71C1C" stroke-width="2"/>
+    </svg>`,
+    scarf_blue: `<svg viewBox="0 0 70 45" class="pet-outfit pet-outfit-scarf">
+      <defs><linearGradient id="scarfB" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#42A5F5"/><stop offset="100%" style="stop-color:#1565C0"/></linearGradient></defs>
+      <rect x="5" y="5" width="60" height="14" rx="7" fill="url(#scarfB)"/>
+      <path d="M12 19 L12 42 Q12 45 15 45 L20 45 Q23 45 23 42 L23 22" fill="#1565C0"/>
+      <line x1="12" y1="38" x2="23" y2="38" stroke="#0D47A1" stroke-width="2"/>
+      <line x1="12" y1="32" x2="23" y2="32" stroke="#0D47A1" stroke-width="2"/>
+    </svg>`,
+    scarf_green: `<svg viewBox="0 0 70 45" class="pet-outfit pet-outfit-scarf">
+      <defs><linearGradient id="scarfG" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#66BB6A"/><stop offset="100%" style="stop-color:#2E7D32"/></linearGradient></defs>
+      <rect x="5" y="5" width="60" height="14" rx="7" fill="url(#scarfG)"/>
+      <path d="M12 19 L12 42 Q12 45 15 45 L20 45 Q23 45 23 42 L23 22" fill="#2E7D32"/>
+      <line x1="12" y1="38" x2="23" y2="38" stroke="#1B5E20" stroke-width="2"/>
+      <line x1="12" y1="32" x2="23" y2="32" stroke="#1B5E20" stroke-width="2"/>
+    </svg>`,
+    
+    // Обувь
+    shoes_sneakers: `<svg viewBox="0 0 60 25" class="pet-outfit pet-outfit-shoes">
+      <defs><linearGradient id="sneak" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#fff"/><stop offset="50%" style="stop-color:#fff"/><stop offset="50%" style="stop-color:#2196F3"/><stop offset="100%" style="stop-color:#1565C0"/></linearGradient></defs>
+      <path d="M2 8 Q2 2 10 2 L18 2 Q22 2 22 8 L22 20 Q22 23 18 23 L5 23 Q2 23 2 20 Z" fill="url(#sneak)"/>
+      <path d="M38 8 Q38 2 46 2 L54 2 Q58 2 58 8 L58 20 Q58 23 54 23 L41 23 Q38 23 38 20 Z" fill="url(#sneak)"/>
+      <ellipse cx="12" cy="22" rx="10" ry="3" fill="#E0E0E0"/>
+      <ellipse cx="48" cy="22" rx="10" ry="3" fill="#E0E0E0"/>
+    </svg>`,
+    shoes_boots: `<svg viewBox="0 0 55 35" class="pet-outfit pet-outfit-shoes">
+      <defs><linearGradient id="boot" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#6D4C41"/><stop offset="100%" style="stop-color:#3E2723"/></linearGradient></defs>
+      <path d="M3 5 L3 28 Q3 33 8 33 L18 33 Q23 33 23 28 L23 5 Q23 2 13 2 Q3 2 3 5 Z" fill="url(#boot)"/>
+      <path d="M32 5 L32 28 Q32 33 37 33 L47 33 Q52 33 52 28 L52 5 Q52 2 42 2 Q32 2 32 5 Z" fill="url(#boot)"/>
+      <rect x="3" y="5" width="20" height="4" fill="#5D4037"/>
+      <rect x="32" y="5" width="20" height="4" fill="#5D4037"/>
+    </svg>`,
+    shoes_slippers: `<svg viewBox="0 0 60 22" class="pet-outfit pet-outfit-shoes">
+      <defs><linearGradient id="slip" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#F8BBD9"/><stop offset="100%" style="stop-color:#F48FB1"/></linearGradient></defs>
+      <ellipse cx="13" cy="12" rx="12" ry="10" fill="url(#slip)"/>
+      <ellipse cx="47" cy="12" rx="12" ry="10" fill="url(#slip)"/>
+      <ellipse cx="13" cy="8" rx="6" ry="4" fill="#FCE4EC"/>
+      <ellipse cx="47" cy="8" rx="6" ry="4" fill="#FCE4EC"/>
+    </svg>`,
+    
+    // Аксессуары
+    acc_glasses: `<svg viewBox="0 0 55 22" class="pet-outfit pet-outfit-acc">
+      <rect x="3" y="5" width="20" height="14" rx="3" fill="rgba(0,0,0,0.8)" stroke="#333" stroke-width="2"/>
+      <rect x="32" y="5" width="20" height="14" rx="3" fill="rgba(0,0,0,0.8)" stroke="#333" stroke-width="2"/>
+      <rect x="23" y="10" width="9" height="3" fill="#333"/>
+      <line x1="1" y1="8" x2="3" y2="10" stroke="#333" stroke-width="2"/>
+      <line x1="52" y1="10" x2="54" y2="8" stroke="#333" stroke-width="2"/>
+    </svg>`,
+    acc_bow: `<svg viewBox="0 0 45 30" class="pet-outfit pet-outfit-acc">
+      <defs><linearGradient id="bow" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#F06292"/><stop offset="100%" style="stop-color:#C2185B"/></linearGradient></defs>
+      <ellipse cx="12" cy="15" rx="11" ry="9" fill="url(#bow)"/>
+      <ellipse cx="33" cy="15" rx="11" ry="9" fill="url(#bow)"/>
+      <circle cx="22" cy="15" r="6" fill="#AD1457"/>
+      <ellipse cx="12" cy="15" rx="5" ry="4" fill="#F8BBD9" opacity="0.5"/>
+      <ellipse cx="33" cy="15" rx="5" ry="4" fill="#F8BBD9" opacity="0.5"/>
+    </svg>`,
+    acc_medal: `<svg viewBox="0 0 35 50" class="pet-outfit pet-outfit-acc">
+      <defs><linearGradient id="medal" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFD54F"/><stop offset="100%" style="stop-color:#FF8F00"/></linearGradient></defs>
+      <path d="M12 0 L23 0 L20 18 L15 18 Z" fill="#1976D2"/>
+      <circle cx="17" cy="32" r="15" fill="url(#medal)" stroke="#F57C00" stroke-width="2"/>
+      <text x="17" y="38" text-anchor="middle" fill="#E65100" font-size="16" font-weight="bold">★</text>
+    </svg>`,
+    acc_necklace: `<svg viewBox="0 0 60 18" class="pet-outfit pet-outfit-acc">
+      <path d="M5 5 Q30 18 55 5" stroke="#9E9E9E" stroke-width="2" fill="none"/>
+      <circle cx="10" cy="7" r="5" fill="#E91E63"/>
+      <circle cx="22" cy="12" r="5" fill="#9C27B0"/>
+      <circle cx="35" cy="14" r="6" fill="#2196F3"/>
+      <circle cx="48" cy="10" r="5" fill="#4CAF50"/>
+    </svg>`
+  };
+  
   // Шапка
-  if (outfit.hat) {
-    html += `<div class="pet-outfit pet-outfit-hat ${outfit.hat}"></div>`;
+  if (outfit.hat && svgSprites[outfit.hat]) {
+    html += svgSprites[outfit.hat];
   }
   // Аксессуар
-  if (outfit.accessory) {
-    html += `<div class="pet-outfit pet-outfit-acc ${outfit.accessory}"></div>`;
+  if (outfit.accessory && svgSprites[outfit.accessory]) {
+    html += svgSprites[outfit.accessory];
   }
   // Шарф
-  if (outfit.scarf) {
-    html += `<div class="pet-outfit pet-outfit-scarf ${outfit.scarf}"></div>`;
+  if (outfit.scarf && svgSprites[outfit.scarf]) {
+    html += svgSprites[outfit.scarf];
   }
   // Обувь
-  if (outfit.shoes) {
-    html += `<div class="pet-outfit pet-outfit-shoes ${outfit.shoes}"></div>`;
+  if (outfit.shoes && svgSprites[outfit.shoes]) {
+    html += svgSprites[outfit.shoes];
   }
   
   return html;

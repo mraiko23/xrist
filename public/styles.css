@@ -3350,7 +3350,7 @@ button, input, textarea {
   margin-left: 4px;
 }
 
-/* ===== ОДЕЖДА НА ПИТОМЦЕ ===== */
+/* ===== ОДЕЖДА НА ПИТОМЦЕ (SVG) ===== */
 .pet-avatar-wrapper {
   position: relative;
   display: inline-block;
@@ -3361,153 +3361,39 @@ button, input, textarea {
   pointer-events: none;
   left: 50%;
   transform: translateX(-50%);
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.35));
 }
 
+/* Шапка */
 .pet-outfit-hat {
-  top: 5px;
+  top: -8px;
+  width: 55px;
+  height: 45px;
   z-index: 10;
 }
 
+/* Аксессуар */
 .pet-outfit-acc {
-  top: 40px;
+  top: 32px;
+  width: 50px;
+  height: 28px;
   z-index: 15;
 }
 
+/* Шарф */
 .pet-outfit-scarf {
-  top: 75px;
+  top: 78px;
+  width: 60px;
+  height: 40px;
   z-index: 3;
 }
 
+/* Обувь */
 .pet-outfit-shoes {
-  top: 95px;
+  top: 98px;
+  width: 55px;
+  height: 28px;
   z-index: 1;
-}
-
-/* === ШАПКИ === */
-.hat_crown {
-  width: 45px;
-  height: 30px;
-  background: #ffd700;
-  border-radius: 5px 5px 0 0;
-  border-bottom: 4px solid #daa520;
-}
-
-.hat_cap {
-  width: 50px;
-  height: 22px;
-  background: #2980b9;
-  border-radius: 25px 25px 0 0;
-  border-bottom: 6px solid #1a5276;
-}
-
-.hat_tophat {
-  width: 35px;
-  height: 40px;
-  background: #222;
-  border-radius: 3px;
-  border-bottom: 8px solid #111;
-}
-
-.hat_party {
-  width: 40px;
-  height: 35px;
-  background: linear-gradient(135deg, #e91e63 70%, #ffeb3b 70%);
-  border-radius: 50% 50% 0 0;
-}
-
-.hat_cowboy {
-  width: 55px;
-  height: 18px;
-  background: #8b4513;
-  border-radius: 50%;
-  border-top: 15px solid #a0522d;
-}
-
-.hat_santa {
-  width: 45px;
-  height: 30px;
-  background: #c0392b;
-  border-radius: 0 20px 0 0;
-  border-bottom: 8px solid white;
-}
-
-/* === ШАРФЫ === */
-.scarf_red {
-  width: 55px;
-  height: 15px;
-  background: #e74c3c;
-  border-radius: 8px;
-  box-shadow: 0 3px 0 #c0392b;
-}
-
-.scarf_blue {
-  width: 55px;
-  height: 15px;
-  background: #3498db;
-  border-radius: 8px;
-  box-shadow: 0 3px 0 #2980b9;
-}
-
-.scarf_green {
-  width: 55px;
-  height: 15px;
-  background: #27ae60;
-  border-radius: 8px;
-  box-shadow: 0 3px 0 #1e8449;
-}
-
-/* === ОБУВЬ === */
-.shoes_sneakers {
-  width: 50px;
-  height: 15px;
-  background: linear-gradient(90deg, #3498db 45%, transparent 45%, transparent 55%, #3498db 55%);
-  border-radius: 8px;
-  border-top: 5px solid white;
-}
-
-.shoes_boots {
-  width: 45px;
-  height: 22px;
-  background: linear-gradient(90deg, #5d4037 45%, transparent 45%, transparent 55%, #5d4037 55%);
-  border-radius: 5px;
-}
-
-.shoes_slippers {
-  width: 50px;
-  height: 12px;
-  background: linear-gradient(90deg, #f48fb1 45%, transparent 45%, transparent 55%, #f48fb1 55%);
-  border-radius: 50%;
-}
-
-/* === АКСЕССУАРЫ === */
-.acc_glasses {
-  width: 50px;
-  height: 16px;
-  background: linear-gradient(90deg, #333 40%, transparent 40%, transparent 60%, #333 60%);
-  border-radius: 4px;
-  border: 2px solid #222;
-}
-
-.acc_bow {
-  width: 30px;
-  height: 20px;
-  background: #e91e63;
-  border-radius: 50%;
-}
-
-.acc_medal {
-  width: 25px;
-  height: 25px;
-  background: #ffd700;
-  border-radius: 50%;
-  border: 3px solid #ffa000;
-}
-
-.acc_necklace {
-  width: 45px;
-  height: 10px;
-  background: linear-gradient(90deg, #e91e63 20%, #9c27b0 40%, #2196f3 60%, #4caf50 80%);
-  border-radius: 5px;
 }
 
 

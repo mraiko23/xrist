@@ -32,21 +32,44 @@ async function getDB() {
   return { data: JSON.parse(content), sha: data.sha };
 }
 
-// Сохранить данные в GitHub
-async function saveDB(data, sha) {
+// Сохранить данные в GitHub с retry при конфликте
+async function saveDB(data, sha, retries = 3) {
   const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
-  await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `token ${GITHUB_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      message: 'Update db.json',
-      content: content,
-      sha: sha
-    })
-  });
+  
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'Update db.json',
+        content: content,
+        sha: sha
+      })
+    });
+    
+    if (res.ok) {
+      return true;
+    }
+    
+    const error = await res.json();
+    console.log(`GitHub save attempt ${attempt + 1} failed:`, error.message);
+    
+    // Если конфликт sha - получаем новый и пробуем снова
+    if (res.status === 409 && attempt < retries - 1) {
+      console.log('SHA conflict, retrying with fresh data...');
+      const fresh = await getDB();
+      sha = fresh.sha;
+      // Мержим данные
+      Object.assign(fresh.data, data);
+      data = fresh.data;
+      continue;
+    }
+    
+    throw new Error(error.message || 'GitHub save failed');
+  }
 }
 
 // API endpoints
@@ -289,18 +312,42 @@ app.post('/api/submissions', async (req, res) => {
     if (req.body.media && req.body.media.length > 0) {
       for (let i = 0; i < req.body.media.length; i++) {
         const mediaItem = req.body.media[i];
+        
+        // Проверяем что данные есть
+        if (!mediaItem.data) {
+          console.log('Skipping media item without data');
+          continue;
+        }
+        
+        // Определяем расширение из MIME типа в base64
+        let ext = '.jpg';
+        const mimeMatch = mediaItem.data.match(/^data:([^;]+);base64,/);
+        if (mimeMatch) {
+          const mime = mimeMatch[1];
+          if (mime.includes('png')) ext = '.png';
+          else if (mime.includes('gif')) ext = '.gif';
+          else if (mime.includes('webp')) ext = '.webp';
+          else if (mime.includes('mp4') || mime.includes('video')) ext = '.mp4';
+          else if (mime.includes('webm')) ext = '.webm';
+          else if (mime.includes('mov') || mime.includes('quicktime')) ext = '.mov';
+        }
+        
         const base64Data = mediaItem.data.replace(/^data:[^;]+;base64,/, '');
-        const ext = mediaItem.type === 'video' ? '.mp4' : '.jpg';
         const filename = `${submissionId}_${i}${ext}`;
         const filepath = path.join(UPLOADS_DIR, filename);
         
-        fs.writeFileSync(filepath, base64Data, 'base64');
-        
-        mediaFiles.push({
-          url: `/uploads/${filename}`,
-          type: mediaItem.type,
-          name: mediaItem.name
-        });
+        try {
+          fs.writeFileSync(filepath, base64Data, 'base64');
+          console.log(`Saved file: ${filename}`);
+          
+          mediaFiles.push({
+            url: `/uploads/${filename}`,
+            type: mediaItem.type,
+            name: mediaItem.name || filename
+          });
+        } catch (writeErr) {
+          console.error(`Error writing file ${filename}:`, writeErr);
+        }
       }
     }
     
@@ -310,7 +357,7 @@ app.post('/api/submissions', async (req, res) => {
       hwTitle: req.body.hwTitle,
       tgId: req.body.tgId,
       userName: req.body.userName,
-      media: mediaFiles, // теперь храним только URL
+      media: mediaFiles,
       comment: req.body.comment || '',
       status: 'pending',
       submittedAt: new Date().toISOString()

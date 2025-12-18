@@ -829,31 +829,19 @@ function renderPetOutfitOnPet(pet) {
   
   // Шапка сверху
   if (outfit.hat) {
-    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.hat);
-    if (item) {
-      items.push(`<div class="outfit-item outfit-hat">${item.emoji}</div>`);
-    }
+    items.push(`<div class="outfit-item outfit-hat sprite-${outfit.hat}"></div>`);
   }
-  // Аксессуар справа
+  // Аксессуар на лице
   if (outfit.accessory) {
-    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.accessory);
-    if (item) {
-      items.push(`<div class="outfit-item outfit-accessory">${item.emoji}</div>`);
-    }
+    items.push(`<div class="outfit-item outfit-accessory sprite-${outfit.accessory}"></div>`);
   }
-  // Шарф слева
+  // Шарф на шее
   if (outfit.scarf) {
-    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.scarf);
-    if (item) {
-      items.push(`<div class="outfit-item outfit-scarf">${item.emoji}</div>`);
-    }
+    items.push(`<div class="outfit-item outfit-scarf sprite-${outfit.scarf}"></div>`);
   }
   // Обувь снизу
   if (outfit.shoes) {
-    const item = PET_SHOP_ITEMS.find(i => i.id === outfit.shoes);
-    if (item) {
-      items.push(`<div class="outfit-item outfit-shoes">${item.emoji}</div>`);
-    }
+    items.push(`<div class="outfit-item outfit-shoes sprite-${outfit.shoes}"></div>`);
   }
   
   return items.join('');

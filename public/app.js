@@ -754,10 +754,10 @@ function getCurrentSeason() {
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
   const seasonIndex = dayOfYear % 4;
   const seasons = [
-    { id: 'spring', name: 'Весна', bg: '🌸🌷🌱', emoji: '🌸', colors: ['#a8e6cf', '#dcedc1'] },
-    { id: 'summer', name: 'Лето', bg: '☀️🌻🌴', emoji: '☀️', colors: ['#ffeaa7', '#fdcb6e'] },
-    { id: 'autumn', name: 'Осень', bg: '🍂🍁🌰', emoji: '🍂', colors: ['#fab1a0', '#e17055'] },
-    { id: 'winter', name: 'Зима', bg: '❄️⛄🌨️', emoji: '❄️', colors: ['#dfe6e9', '#74b9ff'] }
+    { id: 'spring', name: 'Весна', bgEmojis: ['🌸', '🌷', '🌱'], emoji: '🌸' },
+    { id: 'summer', name: 'Лето', bgEmojis: ['☀️', '🌻', '🌴'], emoji: '☀️' },
+    { id: 'autumn', name: 'Осень', bgEmojis: ['🍂', '🍁', '🌰'], emoji: '🍂' },
+    { id: 'winter', name: 'Зима', bgEmojis: ['❄️', '⛄', '🌨️'], emoji: '❄️' }
   ];
   return seasons[seasonIndex];
 }
@@ -802,11 +802,11 @@ function renderPetAlive(pet) {
     <div class="pet-page">
       <div class="pet-card pet-season-${season.id}">
         <div class="pet-season-bg">
-          <span class="season-emoji s1">${season.bg.split('')[0]}</span>
-          <span class="season-emoji s2">${season.bg.split('')[1]}</span>
-          <span class="season-emoji s3">${season.bg.split('')[2]}</span>
-          <span class="season-emoji s4">${season.bg.split('')[0]}</span>
-          <span class="season-emoji s5">${season.bg.split('')[1]}</span>
+          <span class="season-emoji s1">${season.bgEmojis[0]}</span>
+          <span class="season-emoji s2">${season.bgEmojis[1]}</span>
+          <span class="season-emoji s3">${season.bgEmojis[2]}</span>
+          <span class="season-emoji s4">${season.bgEmojis[0]}</span>
+          <span class="season-emoji s5">${season.bgEmojis[1]}</span>
         </div>
         <div class="pet-header">
           <div class="pet-name-display">${pet.name} <span class="season-badge">${season.emoji}</span></div>
@@ -826,15 +826,6 @@ function renderPetAlive(pet) {
             ${renderPetOutfitOnPet(pet)}
           </div>
           <div class="pet-shadow"></div>
-        </div>
-        
-        <div class="pet-mood-bar">
-          <div class="mood-icons">
-            <span>🍎</span>
-            <span>⚽</span>
-            <span>😴</span>
-            <span>💕</span>
-          </div>
         </div>
         
         ${task ? `
@@ -866,8 +857,6 @@ function renderPetAlive(pet) {
           <button class="pet-shop-btn" id="open-shop-btn">🛒 Магазин</button>
           <button class="pet-inventory-btn" id="open-inventory-btn">👕 Одежда</button>
         </div>
-        
-        ${renderPetOutfit(pet)}
       </div>
     </div>
     
@@ -944,18 +933,6 @@ function renderPetAlive(pet) {
       </div>
     </div>
   `;
-}
-
-function renderPetOutfit(pet) {
-  const outfit = pet.outfit || {};
-  const items = [];
-  if (outfit.hat) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.hat)?.emoji || '');
-  if (outfit.scarf) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.scarf)?.emoji || '');
-  if (outfit.shoes) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.shoes)?.emoji || '');
-  if (outfit.accessory) items.push(PET_SHOP_ITEMS.find(i => i.id === outfit.accessory)?.emoji || '');
-  
-  if (items.length === 0) return '';
-  return `<div class="pet-outfit-display">${items.join(' ')}</div>`;
 }
 
 function renderShopItems(type, pet) {

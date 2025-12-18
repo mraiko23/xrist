@@ -2815,6 +2815,32 @@ button, input, textarea {
   font-size: 20px;
 }
 
+.pet-shop-modal .modal-close,
+.pet-inventory-modal .modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(145deg, #f1f2f6, #dfe6e9);
+  font-size: 20px;
+  font-weight: 700;
+  color: #636e72;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.pet-shop-modal .modal-close:hover,
+.pet-inventory-modal .modal-close:hover {
+  background: linear-gradient(145deg, #e74c3c, #c0392b);
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 4px 15px rgba(231,76,60,0.3);
+}
+
 .shop-balance {
   background: linear-gradient(135deg, #fdcb6e, #e17055);
   color: white;

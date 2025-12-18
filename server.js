@@ -29,6 +29,13 @@ async function getDB() {
   const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
     headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
   });
+  
+  if (!res.ok) {
+    const err = await res.json();
+    console.error('GitHub getDB error:', err);
+    throw new Error(`GitHub API error: ${err.message || res.status}`);
+  }
+  
   const data = await res.json();
   const content = Buffer.from(data.content, 'base64').toString('utf-8');
   return { data: JSON.parse(content), sha: data.sha };
@@ -151,6 +158,7 @@ app.get('/api/user/:tgId', async (req, res) => {
 // Регистрация пользователя
 app.post('/api/register', async (req, res) => {
   try {
+    console.log('Register request:', req.body.tgId, req.body.firstName);
     const { data, sha } = await getDB();
     if (!data.users) data.users = [];
     
@@ -174,9 +182,11 @@ app.post('/api/register', async (req, res) => {
     });
     
     await saveDB(data, sha);
+    console.log('User registered successfully:', req.body.tgId);
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error('Register error:', e.message);
+    res.status(500).json({ error: 'Ошибка сервера: ' + e.message });
   }
 });
 

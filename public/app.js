@@ -152,6 +152,10 @@ function setupRegistration() {
       photo: tgUser.photo_url || ''
     });
     
+    if (result.error) {
+      showToast(result.error);
+      return;
+    }
     if (result.success) {
       currentUser = await api.get(`/api/user/${tgUser.id}`);
       showScreen('main-screen');
@@ -159,7 +163,7 @@ function setupRegistration() {
       renderPage('progress');
       showToast('Добро пожаловать! 🎉');
     } else {
-      showToast(result.message || 'Ошибка');
+      showToast(result.message || 'Ошибка регистрации');
     }
   };
 }

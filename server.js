@@ -37,44 +37,11 @@ const PET_TASKS = [
   { id: 'walk', emoji: '🚶', text: 'Погуляй со мной!', action: 'Гулять' }
 ];
 
-// Генерирует случайные времена для задач на день (4 задачи с 4:00 до 18:00 МСК)
-function generateDailyTaskTimes(seed) {
-  // Используем seed для генерации одинаковых времён для одного дня
-  const random = (s) => {
-    const x = Math.sin(s) * 10000;
-    return x - Math.floor(x);
-  };
-  
-  const times = [];
-  // 4 задачи распределены по периодам: 4-7, 7-11, 11-14, 14-18 МСК
-  const periods = [
-    { start: 4, end: 7 },
-    { start: 7, end: 11 },
-    { start: 11, end: 14 },
-    { start: 14, end: 18 }
-  ];
-  
-  for (let i = 0; i < 4; i++) {
-    const period = periods[i];
-    const hour = period.start + random(seed + i) * (period.end - period.start);
-    const minute = random(seed + i + 100) * 60;
-    times.push({ hour: Math.floor(hour), minute: Math.floor(minute) });
-  }
-  
-  return times;
-}
-
-// Проверить и активировать запланированные задачи питомца
-function checkAndGeneratePetTask(pet) {
+// Проверить питомца (дедлайн задачи)
+function checkPetDeadline(pet) {
   if (!pet || pet.isDead) return { pet, changed: false };
   
   const now = new Date();
-  const mskNow = new Date(now.getTime() + 3 * 60 * 60 * 1000); // МСК время
-  const today = mskNow.toISOString().split('T')[0]; // YYYY-MM-DD
-  const mskHour = mskNow.getUTCHours();
-  const mskMinute = mskNow.getUTCMinutes();
-  const currentMskMinutes = mskHour * 60 + mskMinute;
-  let changed = false;
   
   // Проверяем не истекла ли текущая задача
   if (pet.currentTask) {
@@ -86,65 +53,92 @@ function checkAndGeneratePetTask(pet) {
       pet.currentTask = null;
       return { pet, changed: true };
     }
-    return { pet, changed: false }; // Задача ещё активна
   }
   
-  // Если новый день - генерируем новое расписание задач
-  if (pet.scheduledTasksDate !== today) {
-    // Seed на основе ID питомца и даты для уникальности
-    const seed = (pet.animalId || 'pet').split('').reduce((a, c) => a + c.charCodeAt(0), 0) + 
-                 parseInt(today.replace(/-/g, ''));
-    pet.scheduledTasks = generateDailyTaskTimes(seed);
-    pet.scheduledTasksDate = today;
-    pet.completedTasksToday = 0;
-    changed = true;
+  return { pet, changed: false };
+}
+
+// Фоновая проверка всех питомцев и генерация задач
+async function backgroundPetCheck() {
+  try {
+    const { data, sha } = await getDB();
+    if (!data.users) return;
     
-    // Пропускаем задачи которые уже прошли (с учётом 4 часов на выполнение)
-    // Это нужно чтобы питомец не погибал при первом заходе за день
-    for (let i = 0; i < pet.scheduledTasks.length; i++) {
-      const taskTime = pet.scheduledTasks[i];
-      const taskMskMinutes = taskTime.hour * 60 + taskTime.minute;
-      const deadlineMskMinutes = taskMskMinutes + 4 * 60; // +4 часа
+    const now = new Date();
+    const mskNow = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+    const today = mskNow.toISOString().split('T')[0];
+    const mskHour = mskNow.getUTCHours();
+    
+    let anyChanged = false;
+    
+    for (let i = 0; i < data.users.length; i++) {
+      const user = data.users[i];
+      if (!user.pet || user.pet.isDead) continue;
       
-      if (currentMskMinutes > deadlineMskMinutes) {
-        // Эта задача уже полностью прошла - пропускаем
-        pet.completedTasksToday = i + 1;
-      } else {
-        break; // Нашли задачу которая ещё актуальна
+      const pet = user.pet;
+      
+      // Проверяем дедлайн текущей задачи
+      if (pet.currentTask) {
+        const deadline = new Date(pet.currentTask.deadline);
+        if (now > deadline) {
+          pet.isDead = true;
+          pet.diedAt = now.toISOString();
+          pet.currentTask = null;
+          anyChanged = true;
+          console.log(`Pet died for user ${user.tgId} - missed deadline`);
+          continue;
+        }
+        // Задача активна - пропускаем
+        continue;
       }
+      
+      // Сброс счётчика на новый день
+      if (pet.lastTaskDate !== today) {
+        pet.lastTaskDate = today;
+        pet.tasksToday = 0;
+        anyChanged = true;
+      }
+      
+      // Макс 4 задачи в день
+      const tasksToday = pet.tasksToday || 0;
+      if (tasksToday >= 4) continue;
+      
+      // Задачи только с 6:00 до 22:00 МСК
+      if (mskHour < 6 || mskHour >= 22) continue;
+      
+      // Минимум 2 часа между задачами
+      const lastTaskTime = pet.lastTaskCreatedAt ? new Date(pet.lastTaskCreatedAt) : null;
+      const hoursSinceLastTask = lastTaskTime ? (now - lastTaskTime) / (1000 * 60 * 60) : 999;
+      
+      if (hoursSinceLastTask < 2) continue;
+      
+      // Случайный шанс: 20% каждые 30 мин, гарантированно после 3 часов
+      const chance = hoursSinceLastTask >= 3 ? 1 : 0.2;
+      if (Math.random() > chance) continue;
+      
+      // Создаём задачу!
+      const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
+      const deadline = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+      
+      pet.currentTask = {
+        taskId: randomTask.id,
+        createdAt: now.toISOString(),
+        deadline: deadline.toISOString()
+      };
+      pet.lastTaskCreatedAt = now.toISOString();
+      pet.tasksToday = tasksToday + 1;
+      anyChanged = true;
+      
+      console.log(`Background: New task ${randomTask.id} for user ${user.tgId}, tasks today: ${pet.tasksToday}`);
     }
+    
+    if (anyChanged) {
+      await saveDB(data, sha);
+      console.log('Background pet check: saved changes');
+    }
+  } catch (e) {
+    console.error('Background pet check error:', e.message);
   }
-  
-  // Проверяем наступило ли время для следующей задачи
-  const completedToday = pet.completedTasksToday || 0;
-  if (completedToday >= 4) return { pet, changed }; // Все задачи на сегодня выполнены/пропущены
-  
-  const nextTaskTime = pet.scheduledTasks?.[completedToday];
-  if (!nextTaskTime) return { pet, changed };
-  
-  const taskMskMinutes = nextTaskTime.hour * 60 + nextTaskTime.minute;
-  
-  // Если текущее время ещё не наступило для следующей задачи - не активируем
-  if (currentMskMinutes < taskMskMinutes) {
-    return { pet, changed };
-  }
-  
-  // Время наступило - активируем задачу
-  const randomTask = PET_TASKS[Math.floor(Math.random() * PET_TASKS.length)];
-  
-  // Дедлайн = текущее время + 4 часа
-  const deadline = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-  
-  pet.currentTask = {
-    taskId: randomTask.id,
-    createdAt: now.toISOString(),
-    deadline: deadline.toISOString(),
-    taskIndex: completedToday
-  };
-  changed = true;
-  console.log(`Task ${randomTask.id} activated for pet at ${nextTaskTime.hour}:${nextTaskTime.minute} MSK, deadline: ${deadline.toISOString()}`);
-  
-  return { pet, changed };
 }
 
 // Шаблон базы данных
@@ -389,16 +383,15 @@ app.get('/api/user/:tgId', async (req, res) => {
     
     let user = data.users[userIdx];
     
-    // Проверяем и активируем запланированные задачи питомца
+    // Только проверяем дедлайн (задачи генерируются фоновым процессом)
     if (user.pet && !user.pet.isDead) {
-      const { pet: updatedPet, changed } = checkAndGeneratePetTask(user.pet);
+      const { pet: updatedPet, changed } = checkPetDeadline(user.pet);
       
-      // Если что-то изменилось - сохраняем
       if (changed) {
         user.pet = updatedPet;
         data.users[userIdx] = user;
         await saveDB(data, sha);
-        console.log('Pet task updated for user:', req.params.tgId);
+        console.log('Pet deadline checked for user:', req.params.tgId);
       }
     }
     
@@ -733,6 +726,16 @@ app.listen(PORT, async () => {
     console.error('Failed to initialize GitHub repository:', e.message);
   }
   
+  // Фоновая проверка питомцев каждые 30 минут
+  // Задачи генерируются автоматически независимо от захода пользователей
+  setInterval(async () => {
+    console.log('Running background pet check...');
+    await backgroundPetCheck();
+  }, 30 * 60 * 1000); // 30 минут
+  
+  // Первая проверка через 1 минуту после старта
+  setTimeout(() => backgroundPetCheck(), 60 * 1000);
+  
   // Self-ping каждые 90 секунд чтобы Render не засыпал
   setInterval(async () => {
     try {
@@ -741,5 +744,5 @@ app.listen(PORT, async () => {
     } catch (e) {
       console.log('Self-ping failed:', e.message);
     }
-  }, 90000); // 90 секунд = 1.5 минуты
+  }, 90000);
 });

@@ -198,37 +198,37 @@ let isLoadingMore = false;
 
 function renderProgress() {
   const stickers = currentUser?.stickers || 0;
-  const spentStickers = currentUser?.spentStickers || 0;
-  const earnedStickers = stickers + spentStickers; // Всего заработано
-  const claimedGifts = currentUser?.claimedGifts || 0; // Сколько подарков уже получено
+  // roadProgress - отдельный счётчик позиции на дорожке (не зависит от траты наклеек)
+  // Миграция: если roadProgress не установлен, вычисляем из stickers + spentStickers
+  let roadProgress = currentUser?.roadProgress;
+  if (roadProgress === undefined || roadProgress === null) {
+    roadProgress = (currentUser?.stickers || 0) + (currentUser?.spentStickers || 0);
+    if (currentUser) {
+      currentUser.roadProgress = roadProgress;
+      api.put(`/api/user/${currentUser.tgId}`, { roadProgress });
+    }
+  }
+  
+  const claimedGifts = currentUser?.claimedGifts || 0;
   const threshold = settings.giftThreshold || 5;
   
-  // Сколько подарков заслужено (по заработанным наклейкам)
-  const deservedGifts = Math.floor(earnedStickers / threshold);
-  // Можно ли получить новый подарок
+  // Подарки считаются по прогрессу дорожки
+  const deservedGifts = Math.floor(roadProgress / threshold);
   const canClaimGift = deservedGifts > claimedGifts;
   
-  // Если lastAcknowledgedGift не установлен - инициализируем текущим значением
-  // чтобы не показывать модал для старых подарков
+  // Модал для нового подарка
   let lastAcknowledgedGift = currentUser?.lastAcknowledgedGift;
   if ((lastAcknowledgedGift === undefined || lastAcknowledgedGift === null) && currentUser) {
-    // Первый раз - устанавливаем равным текущим заслуженным подаркам
     lastAcknowledgedGift = deservedGifts;
     currentUser.lastAcknowledgedGift = deservedGifts;
-    // Сохраняем в фоне
     api.put(`/api/user/${currentUser.tgId}`, { lastAcknowledgedGift: deservedGifts });
   }
   
-  // Показать полноэкранный модал только если есть НОВЫЙ подарок
   const showGiftModal = deservedGifts > lastAcknowledgedGift;
+  const toGift = threshold - (roadProgress % threshold);
   
-  // До следующего подарка считаем от заработанных
-  const toGift = threshold - (earnedStickers % threshold);
-  
-  // Начальное количество шагов (показываем по заработанным)
-  loadedSteps = Math.max(earnedStickers + 10, 20);
+  loadedSteps = Math.max(roadProgress + 10, 20);
 
-  // Показываем модал после рендера только для новых подарков
   if (showGiftModal) {
     setTimeout(() => showGiftCelebrationModal(deservedGifts), 300);
   }
@@ -239,14 +239,14 @@ function renderProgress() {
         <h2>Моя дорожка</h2>
         <div class="progress-counter">
           <span>До подарка:</span>
-          <span class="num">${toGift === threshold && earnedStickers === 0 ? threshold : toGift}</span>
+          <span class="num">${toGift === threshold && roadProgress === 0 ? threshold : toGift}</span>
           <span>🎁</span>
         </div>
         <div class="stickers-info">🌟 ${stickers} наклеек</div>
       </div>
       
       <div class="road-container" id="road-container">
-        <div class="road" id="road">${generateRoadItems(1, loadedSteps, earnedStickers)}</div>
+        <div class="road" id="road">${generateRoadItems(1, loadedSteps, roadProgress)}</div>
         <div class="load-more" id="load-more">
           <div class="load-spinner"></div>
         </div>
@@ -308,8 +308,12 @@ async function acknowledgeGift(giftNumber) {
 
 // Генерация шагов дорожки
 function generateRoadItems(from, to, earnedOverride = null) {
-  const spentStickers = currentUser?.spentStickers || 0;
-  const earnedStickers = earnedOverride !== null ? earnedOverride : (currentUser?.stickers || 0) + spentStickers;
+  // Используем roadProgress для позиции на дорожке (не зависит от траты наклеек)
+  let roadProgress = currentUser?.roadProgress;
+  if (roadProgress === undefined || roadProgress === null) {
+    roadProgress = (currentUser?.stickers || 0) + (currentUser?.spentStickers || 0);
+  }
+  const earnedStickers = earnedOverride !== null ? earnedOverride : roadProgress;
   const threshold = settings.giftThreshold || 5;
   let html = '';
   
@@ -1518,7 +1522,7 @@ function setupShopBuyButtons() {
       
       pet.inventory.push(itemId);
       
-      // Списываем наклейки и увеличиваем счётчик потраченных
+      // Списываем только stickers (валюту), roadProgress НЕ трогаем!
       const newStickers = stickers - item.price;
       const spentStickers = (currentUser.spentStickers || 0) + item.price;
       
@@ -1526,6 +1530,7 @@ function setupShopBuyButtons() {
         pet, 
         stickers: newStickers,
         spentStickers: spentStickers
+        // roadProgress НЕ меняем - позиция на дорожке сохраняется
       });
       currentUser.pet = pet;
       currentUser.stickers = newStickers;
@@ -1803,25 +1808,51 @@ function setupAdminEvents() {
 
 // Пользователи
 function renderUsers() {
+  const user = selectedUser ? allUsers.find(u => String(u.tgId) === String(selectedUser)) : null;
+  const userRoadProgress = user ? (user.roadProgress !== undefined ? user.roadProgress : (user.stickers || 0) + (user.spentStickers || 0)) : 0;
+  
   return `
     <div class="user-list">
-      ${(allUsers || []).map(u => `
+      ${(allUsers || []).map(u => {
+        const uRoadProgress = u.roadProgress !== undefined ? u.roadProgress : (u.stickers || 0) + (u.spentStickers || 0);
+        return `
         <div class="user-item ${u.isBlocked ? 'blocked' : ''} ${selectedUser === u.tgId ? 'selected' : ''}" data-id="${u.tgId}">
           ${u.photo ? `<img src="${u.photo}">` : `<div class="user-avatar-placeholder">👤</div>`}
           <div class="user-info">
             <div class="user-name">${u.firstName || ''} ${u.lastName || ''} ${u.isBlocked ? '<span class="blocked-badge">БАН</span>' : ''}</div>
             <div class="user-id">${u.tgId} ${u.username ? `@${u.username}` : ''}</div>
           </div>
-          <div class="user-stats">🏷️${u.stickers || 0} ❌${u.absences || 0}</div>
+          <div class="user-stats">🏷️${u.stickers || 0} 🛤️${uRoadProgress} ❌${u.absences || 0}</div>
         </div>
-      `).join('') || '<div class="empty-state"><p>Нет пользователей</p></div>'}
+      `}).join('') || '<div class="empty-state"><p>Нет пользователей</p></div>'}
     </div>
     <div class="id-input"><input type="text" id="uid" placeholder="ID пользователя" value="${selectedUser || ''}"></div>
+    
+    <div class="admin-section-title">🏷️ Наклейки (валюта + дорожка)</div>
     <div class="action-grid">
-      <button class="action-btn add" data-act="addS">+🏷️</button>
-      <button class="action-btn remove" data-act="remS">-🏷️</button>
-      <button class="action-btn add" data-act="addA">+❌</button>
-      <button class="action-btn remove" data-act="remA">-❌</button>
+      <button class="action-btn add" data-act="addS">+🏷️ Наклейка</button>
+      <button class="action-btn remove" data-act="remS">-🏷️ Наклейка</button>
+    </div>
+    <div class="road-control-row" style="margin-top:8px">
+      <input type="number" id="sticker-amount" placeholder="Кол-во" min="1" value="1" class="sticker-input">
+      <button class="action-btn add" data-act="addMultiS">+Добавить</button>
+      <button class="action-btn remove" data-act="remMultiS">-Убавить</button>
+    </div>
+    
+    <div class="admin-section-title">🛤️ Только дорожка (позиция: ${userRoadProgress})</div>
+    <div class="road-control-row">
+      <input type="number" id="road-amount" placeholder="Кол-во" min="1" value="1" class="sticker-input">
+      <button class="action-btn add" data-act="addRoad">+Вперёд</button>
+      <button class="action-btn remove" data-act="remRoad">-Назад</button>
+    </div>
+    <div class="road-control-row">
+      <button class="action-btn remove full-width" data-act="resetRoad">🔄 Обнулить дорожку</button>
+    </div>
+    
+    <div class="admin-section-title">❌ Пропуски и бан</div>
+    <div class="action-grid">
+      <button class="action-btn add" data-act="addA">+❌ Пропуск</button>
+      <button class="action-btn remove" data-act="remA">-❌ Пропуск</button>
       <button class="action-btn ${selectedUser && allUsers.find(u => String(u.tgId) === String(selectedUser))?.isBlocked ? 'add' : 'remove'}" data-act="block">
         ${selectedUser && allUsers.find(u => String(u.tgId) === String(selectedUser))?.isBlocked ? '✓Разбан' : '🚫Бан'}
       </button>
@@ -1836,12 +1867,9 @@ function setupUserEvents() {
       document.getElementById('uid').value = selectedUser;
       document.querySelectorAll('.user-item').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
-      const user = allUsers.find(u => String(u.tgId) === String(selectedUser));
-      const banBtn = document.querySelector('[data-act="block"]');
-      if (banBtn && user) {
-        banBtn.textContent = user.isBlocked ? '✓Разбан' : '🚫Бан';
-        banBtn.className = `action-btn ${user.isBlocked ? 'add' : 'remove'}`;
-      }
+      // Перерисовываем чтобы обновить позицию дорожки
+      document.getElementById('admin-content').innerHTML = renderUsers();
+      setupUserEvents();
     };
   });
   
@@ -1852,10 +1880,56 @@ function setupUserEvents() {
       const user = allUsers.find(u => String(u.tgId) === String(id));
       if (!user) { showToast('Не найден'); return; }
       
+      const stickerAmount = parseInt(document.getElementById('sticker-amount')?.value) || 1;
+      const roadAmount = parseInt(document.getElementById('road-amount')?.value) || 1;
+      
+      // Миграция: если roadProgress не установлен
+      let currentRoadProgress = user.roadProgress;
+      if (currentRoadProgress === undefined || currentRoadProgress === null) {
+        currentRoadProgress = (user.stickers || 0) + (user.spentStickers || 0);
+      }
+      
       let upd = {};
+      
       switch(btn.dataset.act) {
-        case 'addS': upd.stickers = (user.stickers || 0) + 1; break;
-        case 'remS': upd.stickers = Math.max(0, (user.stickers || 0) - 1); break;
+        // Наклейки: добавляют И stickers И roadProgress
+        case 'addS': 
+          upd.stickers = (user.stickers || 0) + 1;
+          upd.roadProgress = currentRoadProgress + 1;
+          break;
+        case 'remS': 
+          upd.stickers = Math.max(0, (user.stickers || 0) - 1);
+          // roadProgress НЕ уменьшаем при удалении наклейки
+          break;
+        case 'addMultiS': 
+          upd.stickers = (user.stickers || 0) + stickerAmount;
+          upd.roadProgress = currentRoadProgress + stickerAmount;
+          showToast(`+${stickerAmount} наклеек`);
+          break;
+        case 'remMultiS': 
+          upd.stickers = Math.max(0, (user.stickers || 0) - stickerAmount);
+          // roadProgress НЕ уменьшаем
+          showToast(`-${stickerAmount} наклеек (дорожка не изменилась)`);
+          break;
+          
+        // Дорожка: только roadProgress
+        case 'addRoad':
+          upd.roadProgress = currentRoadProgress + roadAmount;
+          showToast(`Дорожка +${roadAmount}`);
+          break;
+        case 'remRoad':
+          upd.roadProgress = Math.max(0, currentRoadProgress - roadAmount);
+          showToast(`Дорожка -${roadAmount}`);
+          break;
+        case 'resetRoad':
+          if (!confirm(`Обнулить дорожку для ${user.firstName}? Это сбросит позицию на дорожке и полученные подарки!`)) return;
+          upd.roadProgress = 0;
+          upd.claimedGifts = 0;
+          upd.lastAcknowledgedGift = 0;
+          showToast('Дорожка обнулена');
+          break;
+          
+        // Пропуски и бан
         case 'addA': upd.absences = (user.absences || 0) + 1; break;
         case 'remA': upd.absences = Math.max(0, (user.absences || 0) - 1); break;
         case 'block': upd.isBlocked = !user.isBlocked; break;
@@ -1866,7 +1940,9 @@ function setupUserEvents() {
       if (id === currentUser?.tgId) currentUser = { ...currentUser, ...upd };
       document.getElementById('admin-content').innerHTML = renderUsers();
       setupUserEvents();
-      showToast('Обновлено ✓');
+      if (!['addMultiS', 'remMultiS', 'resetRoad', 'addRoad', 'remRoad'].includes(btn.dataset.act)) {
+        showToast('Обновлено ✓');
+      }
     };
   });
 }

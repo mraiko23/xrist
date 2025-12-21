@@ -1588,6 +1588,46 @@ label {
   box-shadow: 0 6px 20px rgba(108,92,231,0.35);
 }
 
+/* Управление дорожкой в админке */
+.admin-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin: 20px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.road-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.road-control-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sticker-input {
+  width: 70px !important;
+  min-width: 70px;
+  text-align: center;
+  padding: 12px 8px !important;
+  margin: 0 !important;
+}
+
+.road-control-row .action-btn {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 13px;
+}
+
+.action-btn.full-width {
+  width: 100%;
+}
+
 /* ===== МОДАЛКИ ===== */
 .modal {
   position: fixed;

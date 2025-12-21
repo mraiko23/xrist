@@ -421,6 +421,7 @@ app.post('/api/register', async (req, res) => {
       birthDate: req.body.birthDate,
       photo: req.body.photo || '',
       stickers: 0,
+      roadProgress: 0,
       absences: 0,
       isAdmin: false,
       theme: 'light',

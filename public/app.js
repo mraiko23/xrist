@@ -1867,12 +1867,21 @@ function renderUsers() {
 function setupUserEvents() {
   document.querySelectorAll('.user-item').forEach(el => {
     el.onclick = () => {
+      // Сохраняем значения полей перед перерисовкой
+      const savedStickerAmount = document.getElementById('sticker-amount')?.value || '';
+      const savedRoadAmount = document.getElementById('road-amount')?.value || '';
+      
       selectedUser = el.dataset.id;
       document.getElementById('uid').value = selectedUser;
       document.querySelectorAll('.user-item').forEach(e => e.classList.remove('selected'));
       el.classList.add('selected');
       // Перерисовываем чтобы обновить позицию дорожки
       document.getElementById('admin-content').innerHTML = renderUsers();
+      
+      // Восстанавливаем значения полей
+      if (savedStickerAmount) document.getElementById('sticker-amount').value = savedStickerAmount;
+      if (savedRoadAmount) document.getElementById('road-amount').value = savedRoadAmount;
+      
       setupUserEvents();
     };
   });
@@ -1889,6 +1898,10 @@ function setupUserEvents() {
       const roadAmountVal = document.getElementById('road-amount')?.value;
       const stickerAmount = stickerAmountVal && stickerAmountVal !== '' ? parseInt(stickerAmountVal) : 1;
       const roadAmount = roadAmountVal && roadAmountVal !== '' ? parseInt(roadAmountVal) : 1;
+      
+      // Сохраняем значения для восстановления после перерисовки
+      const savedStickerAmount = stickerAmountVal || '';
+      const savedRoadAmount = roadAmountVal || '';
       
       // Миграция: если roadProgress не установлен
       let currentRoadProgress = user.roadProgress;
@@ -1961,6 +1974,11 @@ function setupUserEvents() {
       allUsers = await api.get('/api/users');
       if (id === currentUser?.tgId) currentUser = { ...currentUser, ...upd };
       document.getElementById('admin-content').innerHTML = renderUsers();
+      
+      // Восстанавливаем значения полей после перерисовки
+      if (savedStickerAmount) document.getElementById('sticker-amount').value = savedStickerAmount;
+      if (savedRoadAmount) document.getElementById('road-amount').value = savedRoadAmount;
+      
       setupUserEvents();
       if (!['addMultiS', 'remMultiS', 'resetRoad', 'addRoad', 'remRoad', 'resetGifts', 'resetAll'].includes(btn.dataset.act)) {
         showToast('Обновлено ✓');

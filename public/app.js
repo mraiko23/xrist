@@ -1888,20 +1888,18 @@ function setupUserEvents() {
   
   document.querySelectorAll('[data-act]').forEach(btn => {
     btn.onclick = async () => {
+      // СРАЗУ сохраняем значения полей в начале
+      const savedStickerAmount = document.getElementById('sticker-amount')?.value || '';
+      const savedRoadAmount = document.getElementById('road-amount')?.value || '';
+      
       const id = document.getElementById('uid')?.value || selectedUser;
       if (!id) { showToast('Выберите пользователя'); return; }
       const user = allUsers.find(u => String(u.tgId) === String(id));
       if (!user) { showToast('Не найден'); return; }
       
       // Получаем значения из полей, если пусто - используем 1
-      const stickerAmountVal = document.getElementById('sticker-amount')?.value;
-      const roadAmountVal = document.getElementById('road-amount')?.value;
-      const stickerAmount = stickerAmountVal && stickerAmountVal !== '' ? parseInt(stickerAmountVal) : 1;
-      const roadAmount = roadAmountVal && roadAmountVal !== '' ? parseInt(roadAmountVal) : 1;
-      
-      // Сохраняем значения для восстановления после перерисовки
-      const savedStickerAmount = stickerAmountVal || '';
-      const savedRoadAmount = roadAmountVal || '';
+      const stickerAmount = savedStickerAmount !== '' ? parseInt(savedStickerAmount) : 1;
+      const roadAmount = savedRoadAmount !== '' ? parseInt(savedRoadAmount) : 1;
       
       // Миграция: если roadProgress не установлен
       let currentRoadProgress = user.roadProgress;
@@ -1973,16 +1971,60 @@ function setupUserEvents() {
       await api.put(`/api/user/${id}`, upd);
       allUsers = await api.get('/api/users');
       if (id === currentUser?.tgId) currentUser = { ...currentUser, ...upd };
+      
+      // Обновляем только список пользователей, не трогая поля ввода
+      updateUserListOnly();
+      
+      if (!['addMultiS', 'remMultiS', 'resetRoad', 'addRoad', 'remRoad', 'resetGifts', 'resetAll'].includes(btn.dataset.act)) {
+        showToast('Обновлено ✓');
+      }
+    };
+  });
+}
+
+// Обновить только список пользователей без перерисовки всего контента
+function updateUserListOnly() {
+  const userList = document.querySelector('.user-list');
+  if (!userList) return;
+  
+  userList.innerHTML = (allUsers || []).map(u => {
+    const uRoadProgress = u.roadProgress !== undefined ? u.roadProgress : (u.stickers || 0) + (u.spentStickers || 0);
+    return `
+      <div class="user-item ${u.isBlocked ? 'blocked' : ''} ${selectedUser === u.tgId ? 'selected' : ''}" data-id="${u.tgId}">
+        ${u.photo ? `<img src="${u.photo}">` : `<div class="user-avatar-placeholder">👤</div>`}
+        <div class="user-info">
+          <div class="user-name">${u.firstName || ''} ${u.lastName || ''} ${u.isBlocked ? '<span class="blocked-badge">БАН</span>' : ''}</div>
+          <div class="user-id">${u.tgId} ${u.username ? `@${u.username}` : ''}</div>
+        </div>
+        <div class="user-stats">🏷️${u.stickers || 0} 🛤️${uRoadProgress} ❌${u.absences || 0}</div>
+      </div>
+    `;
+  }).join('') || '<div class="empty-state"><p>Нет пользователей</p></div>';
+  
+  // Обновляем позицию дорожки в заголовке
+  const user = selectedUser ? allUsers.find(u => String(u.tgId) === String(selectedUser)) : null;
+  const userRoadProgress = user ? (user.roadProgress !== undefined ? user.roadProgress : (user.stickers || 0) + (user.spentStickers || 0)) : 0;
+  const roadTitle = document.querySelector('.admin-section-title:nth-of-type(2)');
+  if (roadTitle && roadTitle.textContent.includes('дорожка')) {
+    roadTitle.textContent = `🛤️ Только дорожка (позиция: ${userRoadProgress})`;
+  }
+  
+  // Перепривязываем события только для списка пользователей
+  document.querySelectorAll('.user-item').forEach(el => {
+    el.onclick = () => {
+      const savedStickerAmount = document.getElementById('sticker-amount')?.value || '';
+      const savedRoadAmount = document.getElementById('road-amount')?.value || '';
+      
+      selectedUser = el.dataset.id;
+      document.getElementById('uid').value = selectedUser;
+      document.querySelectorAll('.user-item').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
       document.getElementById('admin-content').innerHTML = renderUsers();
       
-      // Восстанавливаем значения полей после перерисовки
       if (savedStickerAmount) document.getElementById('sticker-amount').value = savedStickerAmount;
       if (savedRoadAmount) document.getElementById('road-amount').value = savedRoadAmount;
       
       setupUserEvents();
-      if (!['addMultiS', 'remMultiS', 'resetRoad', 'addRoad', 'remRoad', 'resetGifts', 'resetAll'].includes(btn.dataset.act)) {
-        showToast('Обновлено ✓');
-      }
     };
   });
 }

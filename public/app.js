@@ -1834,19 +1834,23 @@ function renderUsers() {
       <button class="action-btn remove" data-act="remS">-🏷️ Наклейка</button>
     </div>
     <div class="road-control-row" style="margin-top:8px">
-      <input type="number" id="sticker-amount" placeholder="Кол-во" min="1" value="1" class="sticker-input">
+      <input type="number" id="sticker-amount" placeholder="Кол-во" min="1" class="sticker-input">
       <button class="action-btn add" data-act="addMultiS">+Добавить</button>
       <button class="action-btn remove" data-act="remMultiS">-Убавить</button>
     </div>
     
     <div class="admin-section-title">🛤️ Только дорожка (позиция: ${userRoadProgress})</div>
     <div class="road-control-row">
-      <input type="number" id="road-amount" placeholder="Кол-во" min="1" value="1" class="sticker-input">
+      <input type="number" id="road-amount" placeholder="Кол-во" min="1" class="sticker-input">
       <button class="action-btn add" data-act="addRoad">+Вперёд</button>
       <button class="action-btn remove" data-act="remRoad">-Назад</button>
     </div>
     <div class="road-control-row">
-      <button class="action-btn remove full-width" data-act="resetRoad">🔄 Обнулить дорожку</button>
+      <button class="action-btn remove" data-act="resetRoad">🔄 Обнулить дорожку</button>
+      <button class="action-btn remove" data-act="resetGifts">🎁 Сбросить подарки</button>
+    </div>
+    <div class="road-control-row">
+      <button class="action-btn remove full-width" data-act="resetAll">💥 Полный сброс (всё)</button>
     </div>
     
     <div class="admin-section-title">❌ Пропуски и бан</div>
@@ -1880,8 +1884,11 @@ function setupUserEvents() {
       const user = allUsers.find(u => String(u.tgId) === String(id));
       if (!user) { showToast('Не найден'); return; }
       
-      const stickerAmount = parseInt(document.getElementById('sticker-amount')?.value) || 1;
-      const roadAmount = parseInt(document.getElementById('road-amount')?.value) || 1;
+      // Получаем значения из полей, если пусто - используем 1
+      const stickerAmountVal = document.getElementById('sticker-amount')?.value;
+      const roadAmountVal = document.getElementById('road-amount')?.value;
+      const stickerAmount = stickerAmountVal && stickerAmountVal !== '' ? parseInt(stickerAmountVal) : 1;
+      const roadAmount = roadAmountVal && roadAmountVal !== '' ? parseInt(roadAmountVal) : 1;
       
       // Миграция: если roadProgress не установлен
       let currentRoadProgress = user.roadProgress;
@@ -1928,6 +1935,21 @@ function setupUserEvents() {
           upd.lastAcknowledgedGift = 0;
           showToast('Дорожка обнулена');
           break;
+        case 'resetGifts':
+          if (!confirm(`Сбросить подарки для ${user.firstName}? Подарки снова станут доступны для получения!`)) return;
+          upd.claimedGifts = 0;
+          upd.lastAcknowledgedGift = 0;
+          showToast('Подарки сброшены - можно получить заново!');
+          break;
+        case 'resetAll':
+          if (!confirm(`ПОЛНЫЙ СБРОС для ${user.firstName}?\n\nЭто обнулит:\n- Наклейки\n- Дорожку\n- Подарки\n- Потраченные наклейки`)) return;
+          upd.stickers = 0;
+          upd.roadProgress = 0;
+          upd.spentStickers = 0;
+          upd.claimedGifts = 0;
+          upd.lastAcknowledgedGift = 0;
+          showToast('Полный сброс выполнен!');
+          break;
           
         // Пропуски и бан
         case 'addA': upd.absences = (user.absences || 0) + 1; break;
@@ -1940,7 +1962,7 @@ function setupUserEvents() {
       if (id === currentUser?.tgId) currentUser = { ...currentUser, ...upd };
       document.getElementById('admin-content').innerHTML = renderUsers();
       setupUserEvents();
-      if (!['addMultiS', 'remMultiS', 'resetRoad', 'addRoad', 'remRoad'].includes(btn.dataset.act)) {
+      if (!['addMultiS', 'remMultiS', 'resetRoad', 'addRoad', 'remRoad', 'resetGifts', 'resetAll'].includes(btn.dataset.act)) {
         showToast('Обновлено ✓');
       }
     };
